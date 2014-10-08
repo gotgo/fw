@@ -22,26 +22,3 @@ type Logger interface {
 
 	Log(m *LogMessage)
 }
-
-type RequstLogger interface {
-	Capture(service string, name string, args map[string]string, duration int, outcome bool)
-}
-
-type Kind string
-
-const (
-	Error     = "error"
-	Warn      = "warn"
-	Inform    = "inform"
-	Debug     = "debug"
-	Timeout   = "timeout"
-	Connect   = "connect"
-	Event     = "event"
-	Marshal   = "marshal"
-	Unmarshal = "unmarshal"
-	Panic     = "panic"
-)
-
-func NewLogger() Logger {
-	return new(StdLogger)
-}
