@@ -31,20 +31,30 @@ func (l *StdLogger) Log(m *LogMessage) {
 	}
 }
 
-func (l *StdLogger) MarshalFail(m string, err error) {
+func (l *StdLogger) MarshalFail(m string, obj interface{}, err error) {
 	msg := err.Error()
 	lm := &LogMessage{
 		Message: "Marshal Failed " + m,
 		Error:   msg,
+		Key:     "object",
+		Value:   fmt.Sprintf("%#v", obj),
 	}
 	logger.Error(lm)
 }
 
-func (l *StdLogger) UnmarshalFail(m string, err error) {
+func (l *StdLogger) UnmarshalFail(m string, data []byte, err error) {
+	var persistedData []byte
+	const arbitraryCutoffSize = 5000
+	if len(data) < arbitraryCutoffSize {
+		persistedData = data
+	}
+
 	msg := err.Error()
 	lm := &LogMessage{
 		Message: "Unmarshal Failed" + m,
 		Error:   msg,
+		Key:     "data",
+		Value:   persistedData,
 	}
 	logger.Error(lm)
 }
@@ -75,7 +85,7 @@ func (l *StdLogger) WillPanic(m string, err error) {
 	}
 
 	if bytes, err := json.Marshal(lm); err != nil {
-		l.UnmarshalFail("could not marshal will panic LogMessage", err)
+		l.MarshalFail("could not marshal will panic LogMessage", lm, err)
 	} else {
 		logger.Critical(string(bytes))
 	}
@@ -96,7 +106,7 @@ func (l *StdLogger) HadPanic(m string, r interface{}) {
 		Value:   str,
 	}
 	if bytes, err := json.Marshal(lm); err != nil {
-		l.UnmarshalFail("could not marshal panic LogMessage", err)
+		l.MarshalFail("could not marshal panic LogMessage", lm, err)
 	} else {
 		logger.Critical(string(bytes))
 	}
@@ -109,7 +119,7 @@ func (l *StdLogger) Error(m string, e error) {
 		Error:   msg,
 	}
 	if bytes, err := json.Marshal(lm); err != nil {
-		l.UnmarshalFail("could not log error because of marshal fail, from error "+m, err)
+		l.MarshalFail("could not log error because of marshal fail, from error "+m, lm, err)
 		return
 	} else {
 		logger.Error(string(bytes))
@@ -124,7 +134,7 @@ func (l *StdLogger) Warn(m string, k string, v interface{}) {
 	}
 
 	if bytes, err := json.Marshal(lm); err != nil {
-		l.UnmarshalFail("could not log warn because of marshal fail", err)
+		l.MarshalFail("could not log warn because of marshal fail", lm, err)
 		return
 	} else {
 		logger.Error(string(bytes))
@@ -147,7 +157,7 @@ func (l *StdLogger) Event(m string, k string, v interface{}) {
 		Value:   v,
 	}
 	if bytes, err := json.Marshal(lm); err != nil {
-		l.UnmarshalFail("could not log event because of marshal fail", err)
+		l.MarshalFail("could not log event because of marshal fail", lm, err)
 		return
 	} else {
 		logger.Info(string(bytes))

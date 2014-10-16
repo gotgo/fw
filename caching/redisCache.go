@@ -77,7 +77,7 @@ func (cs *RedisCache) Get(ns, key string, instance interface{}) (miss bool, err 
 	} else if bytes == nil {
 		return true, nil
 	} else if err = cs.unmarshal(bytes, &instance); err != nil {
-		cs.Log.UnmarshalFail("Redis GET unmarshal fail", err)
+		cs.Log.UnmarshalFail("Redis GET unmarshal fail", bytes, err)
 		return true, err
 	}
 	return false, nil
@@ -91,48 +91,13 @@ func (s *RedisCache) Set(ns, key string, instance interface{}) error {
 		defer conn.Close()
 
 		if value, err := s.marshal(instance); err != nil {
-			s.Log.MarshalFail("Redis marshal error", err)
+			s.Log.MarshalFail("Redis marshal error", instance, err)
 			return err
 		} else if _, err = redis.String(conn.Do("SET", key, value)); err != nil {
 			s.Log.Error("Redis SET fail", err)
 			return err
 		}
 		return nil
-	}
-}
-
-func (s *RedisCache) SetAdd(listKey string, member []byte) (int, error) {
-	if conn, err := s.connection(); err != nil {
-		return 0, err
-	} else {
-		defer conn.Close()
-		return redis.Int(conn.Do("SADD", listKey, member))
-	}
-}
-
-func (s *RedisCache) SetMembers(listKey string) ([][]byte, error) {
-	if conn, err := s.connection(); err != nil {
-		return [][]byte{}, err
-	} else {
-		defer conn.Close()
-		if values, err := redis.Values(conn.Do("SMEMBERS", listKey)); err != nil {
-			return nil, err
-		} else {
-			result := make([][]byte, len(values))
-			for i := 0; i < len(values); i++ {
-				result[i] = values[i].([]byte)
-			}
-			return result, nil
-		}
-	}
-}
-
-func (s *RedisCache) SetRemove(listKey string, member []byte) (int, error) {
-	if conn, err := s.connection(); err != nil {
-		return 0, err
-	} else {
-		defer conn.Close()
-		return redis.Int(conn.Do("SREM", listKey, member))
 	}
 }
 
@@ -173,6 +138,19 @@ func (s *RedisCache) connection() (redis.Conn, error) {
 	}
 	return conn, nil
 }
+
+func arrayOfBytes(results interface{}, err error) ([][]byte, error) {
+	if values, err := redis.Values(results, err); err != nil {
+		return nil, err
+	} else {
+		result := make([][]byte, len(values))
+		for i := 0; i < len(values); i++ {
+			result[i] = values[i].([]byte)
+		}
+		return result, nil
+	}
+}
+
 func (cs *RedisCache) marshal(v interface{}) ([]byte, error) {
 	encoder := cs.Encoder
 	if encoder == nil {

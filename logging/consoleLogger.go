@@ -12,13 +12,31 @@ func (l *ConsoleLogger) Log(m *LogMessage) {
 	fmt.Println(m)
 }
 
-func (l *ConsoleLogger) MarshalFail(m string, err error) {
-	lm := &LogMessage{Message: "failed to Marshal object", Error: err.Error()}
+func (l *ConsoleLogger) MarshalFail(m string, obj interface{}, err error) {
+	lm := &LogMessage{
+		Message: "failed to Marshal object",
+		Error:   err.Error(),
+		Key:     "object",
+		Value:   fmt.Sprintf("%#v", obj),
+	}
 	fmt.Println(lm)
 }
 
-func (l *ConsoleLogger) UnmarshalFail(m string, err error) {
-	lm := &LogMessage{Message: "failed to Unmarshal object", Error: err.Error()}
+func (l *ConsoleLogger) UnmarshalFail(m string, data []byte, err error) {
+	var persistedData []byte
+
+	const arbitraryCutoffSize = 5000
+	if len(data) < arbitraryCutoffSize {
+		persistedData = data
+	}
+
+	//how do we capture the data?
+	lm := &LogMessage{
+		Message: "failed to Unmarshal object",
+		Error:   err.Error(),
+		Key:     "rawData",
+		Value:   string(persistedData),
+	}
 	fmt.Println(lm)
 }
 
@@ -44,7 +62,7 @@ func (l *ConsoleLogger) Warn(m string, k string, v interface{}) {
 		Value:   v,
 	}
 	if bytes, err := json.Marshal(lm); err != nil {
-		l.UnmarshalFail("failed to warn", err)
+		l.MarshalFail("failed to warn", lm, err)
 		return
 	} else {
 		fmt.Println(string(bytes))
@@ -72,7 +90,7 @@ func (l *ConsoleLogger) Error(m string, err error) {
 		Error:   err.Error(),
 	}
 	if bytes, err := json.Marshal(lm); err != nil {
-		l.UnmarshalFail("could not log error", err)
+		l.MarshalFail("could not log error", lm, err)
 		return
 	} else {
 		fmt.Println(string(bytes))
@@ -89,7 +107,7 @@ func (l *ConsoleLogger) HadPanic(m string, r interface{}) {
 		Value:   str,
 	}
 	if bytes, err := json.Marshal(lm); err != nil {
-		l.UnmarshalFail("panic message failed to marshal", err)
+		l.MarshalFail("panic message failed to marshal", lm, err)
 		panic(err)
 	} else {
 		fmt.Println(string(bytes))
@@ -103,7 +121,7 @@ func (l *ConsoleLogger) WillPanic(m string, err error) {
 		Error:   err.Error(),
 	}
 	if bytes, err := json.Marshal(lm); err != nil {
-		l.UnmarshalFail("panic message failed to marshal", err)
+		l.MarshalFail("panic message failed to marshal", lm, err)
 	} else {
 		fmt.Println(string(bytes))
 	}

@@ -28,3 +28,26 @@ type SetCache interface {
 	SetMembers(listKey string) ([][]byte, error)
 	SetRemove(listKey string, member []byte) (int, error)
 }
+
+type RedisSet interface {
+	// Add
+	SAdd(key string, items [][]byte) (int, error)
+	// Remove
+	SRem(key string, items [][]byte) (int, error)
+
+	SRandMember(key string, count int) ([][]byte, error)
+
+	SMembers(listKey string) ([][]byte, error)
+}
+
+type RedisSortedSet interface {
+	ZAdd(key string, members []*ScoredMember)
+
+	// ZRevRange returns a subset ordered in descending order
+	ZRevRange(key string, start, stop int) ([]*ScoredMember, error)
+
+	ZIncrBy(key string, amount int, member []byte) (int, error)
+
+	// ZCard returns the Cardinality (i.e. count) of the set
+	ZCard(key string) (int, error)
+}

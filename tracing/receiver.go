@@ -18,7 +18,7 @@ func (ft *Receiver) Name() string {
 
 func (ft *Receiver) Receive(m *TraceMessage) {
 	if bytes, err := json.MarshalIndent(m, "", "\t"); err != nil {
-		ft.Log.MarshalFail("trace receive", err)
+		ft.Log.MarshalFail("trace receive", m, err)
 	} else if _, err := ft.Writer.Write(bytes); err != nil {
 		//if that was a partial write, could corrupt the log
 		ft.Log.Error("failed to write to receiver", err)

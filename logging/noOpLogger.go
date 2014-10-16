@@ -3,9 +3,9 @@ package logging
 type NoOpLogger struct {
 }
 
-func (l *NoOpLogger) Log(m *LogMessage)                 {}
-func (l *NoOpLogger) MarshalFail(m string, err error)   {}
-func (l *NoOpLogger) UnmarshalFail(m string, err error) {}
+func (l *NoOpLogger) Log(m *LogMessage)                                {}
+func (l *NoOpLogger) MarshalFail(m string, obj interface{}, err error) {}
+func (l *NoOpLogger) UnmarshalFail(m string, data []byte, err error)   {}
 
 func (l *NoOpLogger) Timeout(m string, err error)     {}
 func (l *NoOpLogger) ConnectFail(m string, err error) {}

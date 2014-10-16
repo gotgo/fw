@@ -1,8 +1,16 @@
 package logging
 
 type Logger interface {
-	MarshalFail(m string, err error)
-	UnmarshalFail(m string, err error)
+
+	// MarshalFail occurs when an object fails to marshal.
+	// Solving a Marshal failure requires discovering which object type and what data was
+	// in that instance that could have caused the failure. This is why the interface requires
+	// the object
+	MarshalFail(m string, obj interface{}, err error)
+	// UnmarshalFail occures when a stream is unable to be unmarshalled.
+	// Solving a unmarshal failure requires knowing what object type, which field, and
+	// what's wrong with the source data that causes the problem
+	UnmarshalFail(m string, data []byte, err error)
 
 	Timeout(m string, err error)
 	ConnectFail(m string, err error)
