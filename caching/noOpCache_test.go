@@ -1,7 +1,7 @@
 package caching_test
 
 import (
-	. "github.com/krave-n/go/caching"
+	. "github.com/gotgo/fw/caching"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
