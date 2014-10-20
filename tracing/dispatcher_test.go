@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/gotgo/fw/logging"
-	. "github.com/krave-n/go/tracing"
+	"github.com/gotgo/fw/tracing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -20,7 +20,7 @@ func (mr *mockReceiver) Name() string {
 	return "mock"
 }
 
-func (mr *mockReceiver) Receive(tm *TraceMessage) {
+func (mr *mockReceiver) Receive(tm *tracing.TraceMessage) {
 	mr.ReceivedCount++
 	if mr.Delay > 0 {
 		time.Sleep(mr.Delay)
@@ -34,16 +34,16 @@ func (mr *mockReceiver) Close() {
 var _ = Describe("Dispatcher", func() {
 
 	var (
-		dispatcher *Dispatcher
-		aMessage   *TraceMessage
+		dispatcher *tracing.Dispatcher
+		aMessage   *tracing.TraceMessage
 	)
 
 	BeforeEach(func() {
-		dispatcher = &Dispatcher{
+		dispatcher = &tracing.Dispatcher{
 			Log: new(logging.NoOpLogger),
 		}
 
-		aMessage = &TraceMessage{}
+		aMessage = &tracing.TraceMessage{}
 		dispatcher.Start()
 	})
 

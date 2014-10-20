@@ -4,8 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 
-	. "github.com/krave-n/go/tracing"
-
+	"github.com/gotgo/fw/tracing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -16,10 +15,10 @@ type TraceData struct {
 
 var _ = Describe("TraceMessage", func() {
 
-	var msg *TraceMessage
+	var msg *tracing.TraceMessage
 
 	BeforeEach(func() {
-		msg = &TraceMessage{
+		msg = &tracing.TraceMessage{
 			Name: "test",
 		}
 	})

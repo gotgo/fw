@@ -2,7 +2,6 @@ package tracing
 
 import (
 	"sync"
-
 	"sync/atomic"
 
 	"github.com/gotgo/fw/logging"
