@@ -137,7 +137,7 @@ func (l *StdLogger) Warn(m string, k string, v interface{}) {
 		l.MarshalFail("could not log warn because of marshal fail", lm, err)
 		return
 	} else {
-		logger.Error(string(bytes))
+		logger.Warn(string(bytes))
 	}
 }
 

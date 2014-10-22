@@ -8,18 +8,28 @@ type ScoredMember struct {
 }
 
 func (rc *RedisCache) ZAdd(key string, members []*ScoredMember) (int, error) {
+	if len(members) == 0 {
+		return 0, nil
+	}
+
 	if conn, err := rc.connection(); err != nil {
 		return 0, err
 	} else {
 		defer conn.Close()
-		items := make([]interface{}, len(members)*2)
-		for i := range members {
+
+		count := (len(members) * 2) + 1
+		command := make([]interface{}, count)
+		command[0] = key
+		items := command[1:]
+
+		for i := 0; i < len(members); i++ {
 			j := i * 2
 			items[j] = members[i].Score
 			items[j+1] = members[i].Member
+
 		}
 
-		if added, err := redis.Int(conn.Do("ZADD", key, items)); err != nil {
+		if added, err := redis.Int(conn.Do("ZADD", command...)); err != nil {
 			rc.Log.Error("Redis ZADD fail", err)
 			return 0, err
 		} else {
@@ -34,7 +44,7 @@ func (rc *RedisCache) ZRevRange(key string, start, stop int) ([]*ScoredMember, e
 		return nil, err
 	} else {
 		defer conn.Close()
-		return scoredMembers(conn.Do("ZREVRANGE", key, start, stop, "WITHSCORES"))
+		return rc.scoredMembers(conn.Do("ZREVRANGE", key, start, stop, "WITHSCORES"))
 	}
 }
 
@@ -57,16 +67,18 @@ func (rc *RedisCache) ZCard(key string) (int, error) {
 	}
 }
 
-func scoredMembers(results interface{}, err error) ([]*ScoredMember, error) {
+func (rc *RedisCache) scoredMembers(results interface{}, err error) ([]*ScoredMember, error) {
 	if values, err := redis.Values(results, err); err != nil {
 		return nil, err
 	} else {
 		result := make([]*ScoredMember, len(values)/2)
 		for i := range result {
 			j := i * 2
+
+			score, _ := redis.Int(values[j+1], nil)
 			member := &ScoredMember{
 				Member: values[j].([]byte),
-				Score:  values[j+1].(int),
+				Score:  score,
 			}
 			result[i] = member
 		}
