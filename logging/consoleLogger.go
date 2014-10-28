@@ -55,12 +55,11 @@ func (l *ConsoleLogger) ConnectFail(m string, err error) {
 	fmt.Println(lm)
 }
 
-func (l *ConsoleLogger) Warn(m string, k string, v interface{}) {
+func (l *ConsoleLogger) Warn(m string, kv ...*KeyValue) {
 	lm := &LogMessage{
 		Message: m,
-		Key:     k,
-		Value:   v,
 	}
+	SetKeyValue(lm, kv...)
 	if bytes, err := json.Marshal(lm); err != nil {
 		l.MarshalFail("failed to warn", lm, err)
 		return
@@ -75,12 +74,11 @@ func (l *ConsoleLogger) Inform(m string) {
 	fmt.Println(&LogMessage{Message: m})
 }
 
-func (l *ConsoleLogger) Event(m string, k string, v interface{}) {
+func (l *ConsoleLogger) Event(m string, kv ...*KeyValue) {
 	lm := &LogMessage{
 		Message: m,
-		Key:     k,
-		Value:   v,
 	}
+	SetKeyValue(lm, kv...)
 	fmt.Println(lm)
 }
 

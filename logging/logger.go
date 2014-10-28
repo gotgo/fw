@@ -18,13 +18,13 @@ type Logger interface {
 	HadPanic(m string, p interface{})
 	WillPanic(m string, err error)
 	Error(m string, err error)
-	Warn(m string, k string, v interface{})
+	Warn(m string, kv ...*KeyValue)
 	// Inform captures a simple message. If you are logging key value pairs,
 	// Inform("Server is starting...")
 	Inform(m string)
 	// Event logs key value pairs, typically to JSON. Typically using an anonymous struct:
 	//		log.Event("messageReceived", "message",  msg)
-	Event(m string, k string, v interface{})
+	Event(m string, kv ...*KeyValue)
 
 	Debugf(m string, args ...interface{})
 

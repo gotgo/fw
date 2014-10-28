@@ -189,7 +189,7 @@ func (cs *RedisCache) newPool(server, password string) {
 		TestOnBorrow: func(c redis.Conn, t time.Time) error {
 			_, err := c.Do("PING")
 			if err != nil {
-				cs.Log.Warn("failed to ping redis instance", "instance", server)
+				cs.Log.Warn("failed to ping redis instance", &logging.KeyValue{"instance", server})
 			}
 			return err
 		},

@@ -7,6 +7,23 @@ import (
 	"github.com/cihub/seelog"
 )
 
+type KeyValue struct {
+	Key   string
+	Value interface{}
+}
+
+func SetKeyValue(lm *LogMessage, kv ...*KeyValue) {
+	if kv == nil || len(kv) == 0 {
+		return
+	} else if len(kv) == 1 {
+		lm.Key = kv[0].Key
+		lm.Value = kv[0].Value
+	} else {
+		lm.Key = "data"
+		lm.Value = kv
+	}
+}
+
 func init() {
 	DisableLog()
 }

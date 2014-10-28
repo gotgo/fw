@@ -80,13 +80,19 @@ func (tm *TraceMessage) Annotate(f From, k string, v interface{}) {
 
 func (tm *TraceMessage) AnnotateBinary(f From, k string, reader io.Reader, ct string) {
 	var data interface{}
-	if bts, err := ioutil.ReadAll(reader); err != nil {
-		panic(err)
-	} else if err = json.Unmarshal(bts, &data); err != nil {
-		panic(err)
+	bts, err := ioutil.ReadAll(reader)
+	if err != nil {
+		tm.Annotate(f, k, "binary annotate failed "+err.Error())
 	}
-	m := data.(map[string]interface{})
-	tm.Annotations = append(tm.Annotations, &Annotation{From: f, Name: k, Value: m, ContentType: ct, IsBinary: false})
+
+	if ct == "application/json" {
+		if err := json.Unmarshal(bts, &data); err != nil {
+			m := data.(map[string]interface{})
+			tm.Annotations = append(tm.Annotations, &Annotation{From: f, Name: k, Value: m, ContentType: ct, IsBinary: false})
+		}
+	} else {
+		tm.Annotations = append(tm.Annotations, &Annotation{From: f, Name: k, Value: bts, ContentType: ct, IsBinary: true})
+	}
 }
 
 func (tm *TraceMessage) Error(name string, value interface{}) {

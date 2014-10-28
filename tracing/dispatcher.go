@@ -82,7 +82,7 @@ func (d *Dispatcher) Capture(message *TraceMessage) {
 	if d.isRunning {
 		if count := atomic.AddInt32(&d.messagesPending, 1); count >= channelSize {
 			dropped := atomic.AddInt64(&d.droppedMessages, 1)
-			d.Log.Warn("dropped trace message.", "droppedCount", dropped)
+			d.Log.Warn("dropped trace message.", &logging.KeyValue{"droppedCount", dropped})
 			return
 		}
 		d.messages <- message

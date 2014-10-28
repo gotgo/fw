@@ -126,12 +126,12 @@ func (l *StdLogger) Error(m string, e error) {
 	}
 }
 
-func (l *StdLogger) Warn(m string, k string, v interface{}) {
+func (l *StdLogger) Warn(m string, kv ...*KeyValue) {
+
 	lm := &LogMessage{
 		Message: m,
-		Key:     k,
-		Value:   v,
 	}
+	SetKeyValue(lm, kv...)
 
 	if bytes, err := json.Marshal(lm); err != nil {
 		l.MarshalFail("could not log warn because of marshal fail", lm, err)
@@ -150,12 +150,11 @@ func (l *StdLogger) Inform(m string) {
 // Info logs key value pairs, typically to JSON. Typically using an anonymous struct:
 //
 //		log.Info(struct{MyKey string}{MyKey:"value to capture"})
-func (l *StdLogger) Event(m string, k string, v interface{}) {
+func (l *StdLogger) Event(m string, kv ...*KeyValue) {
 	lm := &LogMessage{
 		Message: m,
-		Key:     k,
-		Value:   v,
 	}
+	SetKeyValue(lm, kv...)
 	if bytes, err := json.Marshal(lm); err != nil {
 		l.MarshalFail("could not log event because of marshal fail", lm, err)
 		return
