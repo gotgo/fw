@@ -7,9 +7,6 @@ import (
 )
 
 // MapToStruct is a way to deserialize a dictionary of strings into a struct
-// To enable a terse syntax the following pattern is prefered:
-//
-//		myType, err := MapToStruct(source, new (MyType))
 //
 func MapHeaderToStruct(m map[string][]string, val interface{}) error {
 	simple := make(map[string]string, len(m))
@@ -20,9 +17,6 @@ func MapHeaderToStruct(m map[string][]string, val interface{}) error {
 }
 
 // MapToStruct is a way to deserialize a dictionary of strings into a struct
-// To enable a terse syntax the following pattern is prefered:
-//
-//		myType, err := MapToStruct(source, new (MyType))
 //
 func MapToStruct(m map[string]string, val interface{}) error {
 	b := new(bytes.Buffer)

@@ -1,32 +1,32 @@
-package main
+package config
+
+import "reflect"
 
 type Manager struct {
-	configs map[string]interface{}
-	updates map[string]func(interface{})
+	configs map[reflect.Type]interface{}
 }
 
 func NewManager() *Manager {
 	m := &Manager{
-		configs: make(map[string]interface{}),
-		updates: make(map[string]func(interface{})),
+		configs: make(map[reflect.Type]interface{}),
 	}
 	return m
 }
 
-func (m *Manager) Use(key string, cfg interface{}) {
-	c := m.configs[key]
-	m.configs[key] = cfg
-	if c != nil {
-		f := m.updates[key]
-		if f != nil {
-			f(cfg)
-		}
+func (m *Manager) Use(instance interface{}) {
+	if instance == nil {
+		panic("manager instance can not be nil")
 	}
-}
-func (m *Manager) Get(key string) interface{} {
-	return m.configs[key]
+	key := reflect.TypeOf(instance)
+	m.configs[key] = instance
 }
 
-func (m *Manager) NotifyMe(key string, method func(newCfg interface{})) {
-	m.updates[key] = method
+func (m *Manager) Get(instance interface{}) {
+	key := reflect.TypeOf(instance)
+	i := m.configs[key]
+	instance = i
+}
+
+type ConfigProvider interface {
+	Get(instance interface{})
 }
