@@ -15,6 +15,10 @@ type ConsumerChannel interface {
 type PartitionIndex int32
 type Offset int64
 
+type Sender interface {
+	SendBytes(message []byte, topic, key string) error
+}
+
 // DividePartitions - splits the number of partitions in to buckets numbering the splitBy
 func DividePartitions(partitions, splitBy int) [][]int {
 	buckets := make([][]int, splitBy, splitBy)

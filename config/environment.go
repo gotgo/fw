@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-var Prog *Program
+var App *Application
 
 func init() {
 	hostname, _ := os.Hostname()
@@ -17,7 +17,7 @@ func init() {
 		exeName = os.Args[0]
 	}
 
-	Prog = &Program{
+	App = &Application{
 		Environment:  "stage",
 		HostName:     hostname,
 		IPAddresses:  addrs,
@@ -26,7 +26,7 @@ func init() {
 	}
 }
 
-type Program struct {
+type Application struct {
 	Environment  string
 	HostName     string
 	IPAddresses  []net.Addr
@@ -34,6 +34,6 @@ type Program struct {
 	EnvVariables []string
 }
 
-func (p *Program) AppendEnvironment(key string, seperator string) string {
-	return fmt.Sprintf("%s%s%s", key, seperator, p.Environment)
+func (a *Application) AppendEnvironment(key string, seperator string) string {
+	return fmt.Sprintf("%s%s%s", key, seperator, a.Environment)
 }
