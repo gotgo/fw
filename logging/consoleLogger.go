@@ -17,7 +17,8 @@ func (l *ConsoleLogger) MarshalFail(m string, obj interface{}, err error) {
 		Message: "failed to Marshal object",
 		Error:   err.Error(),
 		Key:     "object",
-		Value:   fmt.Sprintf("%#v", obj),
+		Value:   fmt.Sprintf("%+v", obj),
+		Kind:    "marshalFail",
 	}
 	fmt.Println(lm)
 }
@@ -36,18 +37,19 @@ func (l *ConsoleLogger) UnmarshalFail(m string, data []byte, err error) {
 		Error:   err.Error(),
 		Key:     "rawData",
 		Value:   string(persistedData),
+		Kind:    "unmarshalFail",
 	}
 	fmt.Println(lm)
 }
 
-func (l *ConsoleLogger) Timeout(m string, err error) {
+func (l *ConsoleLogger) Timeout(m string, err error, kv ...*KeyValue) {
 	lm := &LogMessage{
 		Message: m,
 		Error:   err.Error(),
 	}
 	fmt.Println(lm)
 }
-func (l *ConsoleLogger) ConnectFail(m string, err error) {
+func (l *ConsoleLogger) ConnectFail(m string, err error, kv ...*KeyValue) {
 	lm := &LogMessage{
 		Message: m,
 		Error:   err.Error(),
@@ -82,11 +84,12 @@ func (l *ConsoleLogger) Event(m string, kv ...*KeyValue) {
 	fmt.Println(lm)
 }
 
-func (l *ConsoleLogger) Error(m string, err error) {
-	lm := LogMessage{
+func (l *ConsoleLogger) Error(m string, err error, kv ...*KeyValue) {
+	lm := &LogMessage{
 		Message: m,
 		Error:   err.Error(),
 	}
+	SetKeyValue(lm, kv...)
 	if bytes, err := json.Marshal(lm); err != nil {
 		l.MarshalFail("could not log error", lm, err)
 		return
@@ -113,11 +116,12 @@ func (l *ConsoleLogger) HadPanic(m string, r interface{}) {
 	}
 }
 
-func (l *ConsoleLogger) WillPanic(m string, err error) {
+func (l *ConsoleLogger) WillPanic(m string, err error, kv ...*KeyValue) {
 	lm := &LogMessage{
 		Message: m,
 		Error:   err.Error(),
 	}
+	SetKeyValue(lm, kv...)
 	if bytes, err := json.Marshal(lm); err != nil {
 		l.MarshalFail("panic message failed to marshal", lm, err)
 	} else {
@@ -125,6 +129,14 @@ func (l *ConsoleLogger) WillPanic(m string, err error) {
 	}
 }
 
-func (l *ConsoleLogger) Debugf(m string, params ...interface{}) {
-	fmt.Println(&LogMessage{Message: fmt.Sprintf(m, params...)})
+func (l *ConsoleLogger) Debug(m string, kv ...*KeyValue) {
+	lm := &LogMessage{
+		Message: m,
+	}
+	SetKeyValue(lm, kv...)
+	if bytes, err := json.Marshal(lm); err != nil {
+		l.MarshalFail("panic message failed to marshal", lm, err)
+	} else {
+		fmt.Println(string(bytes))
+	}
 }

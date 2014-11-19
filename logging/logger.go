@@ -1,7 +1,7 @@
 package logging
 
 type Logger interface {
-
+	LoggerBasic
 	// MarshalFail occurs when an object fails to marshal.
 	// Solving a Marshal failure requires discovering which object type and what data was
 	// in that instance that could have caused the failure. This is why the interface requires
@@ -12,21 +12,23 @@ type Logger interface {
 	// what's wrong with the source data that causes the problem
 	UnmarshalFail(m string, data []byte, err error)
 
-	Timeout(m string, err error)
-	ConnectFail(m string, err error)
+	Timeout(m string, err error, kv ...*KeyValue)
+	ConnectFail(m string, err error, kv ...*KeyValue)
+}
 
+type LoggerBasic interface {
 	HadPanic(m string, p interface{})
-	WillPanic(m string, err error)
-	Error(m string, err error)
+	WillPanic(m string, err error, kv ...*KeyValue)
+
+	Error(m string, err error, kv ...*KeyValue)
 	Warn(m string, kv ...*KeyValue)
-	// Inform captures a simple message. If you are logging key value pairs,
+
+	// Inform captures a simple message.
 	// Inform("Server is starting...")
 	Inform(m string)
-	// Event logs key value pairs, typically to JSON. Typically using an anonymous struct:
-	//		log.Event("messageReceived", "message",  msg)
-	Event(m string, kv ...*KeyValue)
 
-	Debugf(m string, args ...interface{})
+	Event(m string, kv ...*KeyValue)
+	Debug(m string, kv ...*KeyValue)
 
 	Log(m *LogMessage)
 }

@@ -38,6 +38,7 @@ func (l *StdLogger) MarshalFail(m string, obj interface{}, err error) {
 		Error:   msg,
 		Key:     "object",
 		Value:   fmt.Sprintf("%#v", obj),
+		Kind:    "marshalFail",
 	}
 	logger.Error(lm)
 }
@@ -55,35 +56,41 @@ func (l *StdLogger) UnmarshalFail(m string, data []byte, err error) {
 		Error:   msg,
 		Key:     "data",
 		Value:   persistedData,
+		Kind:    "unmarshalFail",
 	}
 	logger.Error(lm)
 }
 
-func (l *StdLogger) Timeout(m string, err error) {
-	msg := err.Error()
-	lm := &LogMessage{
-		Message: "Timeout: " + m,
-		Error:   msg,
-	}
-	logger.Warn(lm)
-}
-
-func (l *StdLogger) ConnectFail(m string, err error) {
-	msg := err.Error()
-	lm := &LogMessage{
-		Message: "Connect Fail: " + m,
-		Error:   msg,
-	}
-	logger.Warn(lm)
-}
-
-func (l *StdLogger) WillPanic(m string, err error) {
+func (l *StdLogger) Timeout(m string, err error, kv ...*KeyValue) {
 	msg := err.Error()
 	lm := &LogMessage{
 		Message: m,
 		Error:   msg,
+		Kind:    "timeout",
 	}
+	SetKeyValue(lm, kv...)
+	logger.Warn(lm)
+}
 
+func (l *StdLogger) ConnectFail(m string, err error, kv ...*KeyValue) {
+	msg := err.Error()
+	lm := &LogMessage{
+		Message: m,
+		Error:   msg,
+		Kind:    "connectFail",
+	}
+	SetKeyValue(lm, kv...)
+	logger.Warn(lm)
+}
+
+func (l *StdLogger) WillPanic(m string, err error, kv ...*KeyValue) {
+	msg := err.Error()
+	lm := &LogMessage{
+		Message: m,
+		Error:   msg,
+		Kind:    "willPanic",
+	}
+	SetKeyValue(lm, kv...)
 	if bytes, err := json.Marshal(lm); err != nil {
 		l.MarshalFail("could not marshal will panic LogMessage", lm, err)
 	} else {
@@ -101,9 +108,10 @@ func (l *StdLogger) HadPanic(m string, r interface{}) {
 		errMsg = err.Error()
 	}
 	lm := &LogMessage{
-		Message: "Panic Recovered: " + m,
+		Message: m,
 		Error:   errMsg,
 		Value:   str,
+		Kind:    "panic",
 	}
 	if bytes, err := json.Marshal(lm); err != nil {
 		l.MarshalFail("could not marshal panic LogMessage", lm, err)
@@ -112,12 +120,14 @@ func (l *StdLogger) HadPanic(m string, r interface{}) {
 	}
 }
 
-func (l *StdLogger) Error(m string, e error) {
+func (l *StdLogger) Error(m string, e error, kv ...*KeyValue) {
 	msg := e.Error()
 	lm := &LogMessage{
 		Message: m,
 		Error:   msg,
+		Kind:    "error",
 	}
+	SetKeyValue(lm, kv...)
 	if bytes, err := json.Marshal(lm); err != nil {
 		l.MarshalFail("could not log error because of marshal fail, from error "+m, lm, err)
 		return
@@ -130,6 +140,7 @@ func (l *StdLogger) Warn(m string, kv ...*KeyValue) {
 
 	lm := &LogMessage{
 		Message: m,
+		Kind:    "warn",
 	}
 	SetKeyValue(lm, kv...)
 
@@ -144,7 +155,7 @@ func (l *StdLogger) Warn(m string, kv ...*KeyValue) {
 // Infom captures a simple message. If you are logging key value pairs,
 // use Info(m interface{})
 func (l *StdLogger) Inform(m string) {
-	logger.Info(&LogMessage{Message: m})
+	logger.Info(&LogMessage{Message: m, Kind: "inform"})
 }
 
 // Info logs key value pairs, typically to JSON. Typically using an anonymous struct:
@@ -153,6 +164,7 @@ func (l *StdLogger) Inform(m string) {
 func (l *StdLogger) Event(m string, kv ...*KeyValue) {
 	lm := &LogMessage{
 		Message: m,
+		Kind:    "event",
 	}
 	SetKeyValue(lm, kv...)
 	if bytes, err := json.Marshal(lm); err != nil {
@@ -163,9 +175,12 @@ func (l *StdLogger) Event(m string, kv ...*KeyValue) {
 	}
 }
 
-func (l *StdLogger) Debugf(m string, params ...interface{}) {
+func (l *StdLogger) Debug(m string, kv ...*KeyValue) {
 	lm := &LogMessage{
-		Message: fmt.Sprintf(m, params...),
+		Message: m,
+		Kind:    "debug",
 	}
+
+	SetKeyValue(lm, kv...)
 	logger.Debug(lm)
 }
