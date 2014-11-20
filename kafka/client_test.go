@@ -1,7 +1,7 @@
 package kafka_test
 
 import (
-	. "github.com/krave-n/go/kafka"
+	. "github.com/gotgo/fw/kafka"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
