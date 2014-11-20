@@ -15,7 +15,7 @@ func NewBasicMeter(name, environment string, tags ...string) BasicMeter {
 	}
 }
 
-func NewCacheMeter(name, environment string, tags ...string) FullMeter {
+func NewMeter(name, environment string, tags ...string) FullMeter {
 	hostName, _ := os.Hostname()
 	return &Metrics{
 		Hostname:    hostName,
