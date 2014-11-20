@@ -80,8 +80,8 @@ func (d *Coordinator) from(c *Coordinator) {
 func (d *Coordinator) feed() {
 	for f := range d.todo {
 		d.rateLimiter <- nil //rate limited, will block at limit
-		s := f.Steps[d.name].Source
-		go s.Action(func() { d.completed <- f })
+		a := f.Steps[d.name].Action
+		go a.Action(func() { d.completed <- f })
 	}
 }
 
@@ -93,7 +93,7 @@ func (d *Coordinator) process() {
 			s := f.Steps[d.name]
 			s.Attempts++
 
-			if s.Source.Error() != nil {
+			if s.Action.Error() != nil {
 				if s.Attempts > 3 {
 					d.Fail <- f
 					atomic.AddInt32(d.out, 1)

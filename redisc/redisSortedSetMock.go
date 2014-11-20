@@ -1,4 +1,4 @@
-package caching
+package redisc
 
 type ZAddArgs struct {
 	Key     string

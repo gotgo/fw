@@ -1,4 +1,4 @@
-package caching
+package redisc
 
 import "github.com/garyburd/redigo/redis"
 

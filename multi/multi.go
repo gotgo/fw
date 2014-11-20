@@ -1,6 +1,6 @@
 package multi
 
-type StepSource interface {
+type StepAction interface {
 	Action(done func())
 	Error() error
 }
@@ -26,24 +26,31 @@ type Flow struct {
 func (f *Flow) WithErrors() []*StepState {
 	steps := []*StepState{}
 	for _, s := range f.Steps {
-		if err := s.Source.Error(); err != nil {
+		if err := s.Action.Error(); err != nil {
 			steps = append(steps, s)
 		}
 	}
 	return steps
 }
 
-func (f *Flow) NewStep(name string, source StepSource, state interface{}) { //helper method
+func (f *Flow) NewStep(name string, action StepAction, state interface{}) { //helper method
 	f.Steps[name] = &StepState{
 		Name:   name,
-		Source: source,
+		Action: action,
 		State:  state,
+		Output: make(map[string]interface{}),
 	}
 }
 
 type StepState struct {
 	Name     string
 	Attempts int
-	Source   StepSource
+	Action   StepAction
 	State    interface{}
+	Output   map[string]interface{}
+}
+
+type DataFlow interface {
+	Output(name string, value interface{})
+	Input(name string) interface{}
 }

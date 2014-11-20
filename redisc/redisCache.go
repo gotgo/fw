@@ -1,11 +1,12 @@
-package caching
+package redisc
 
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	"math/rand"
 	"time"
 
+	"github.com/amattn/deeperror"
 	"github.com/garyburd/redigo/redis"
 	"github.com/gotgo/fw/logging"
 )
@@ -19,15 +20,29 @@ type RedisCache struct {
 
 // NewRedisCache creates a new cache service connecting to the given
 // hostUri and hostPassword. If there is no hostPassword, then pass an empty string.
-func NewService(hostUri, hostPassword string) *RedisCache {
+func NewService(hostUri, hostPassword string) (*RedisCache, error) {
 	s := new(RedisCache)
 	s.newPool(hostUri, hostPassword)
-	return s
+	if err := s.Ping(); err != nil {
+		return nil, err
+	} else {
+		return s, nil
+	}
 }
 
-func getKey(ns, key string) string {
-	useKey := fmt.Sprintf("%s:%s", ns, key)
-	return useKey
+func (s *RedisCache) Ping() error {
+	if conn, err := s.connection(); err != nil {
+		return err
+	} else {
+		defer conn.Close()
+		if reply, err := redis.String(conn.Do("PING")); err != nil {
+			return err
+		} else if reply == "PONG" {
+			return nil
+		} else {
+			return errors.New("unexpected reply " + reply)
+		}
+	}
 }
 
 func (s *RedisCache) GetBytes(ns, key string) (result []byte, err error) {
@@ -52,6 +67,21 @@ func (s *RedisCache) GetBytes(ns, key string) (result []byte, err error) {
 		} else {
 			return bytes, nil
 		}
+	}
+}
+
+func (s *RedisCache) MGet(ns string, keys []string) (result []string, err error) {
+	conn, err := s.connection()
+	if err != nil {
+		return nil, deeperror.New(rand.Int63(), "Redis connect fail", err)
+	}
+	defer conn.Close()
+
+	useKeys := getKeys(ns, keys)
+	if values, err := arrayOfStrings(conn.Do("MGET", useKeys...)); err != nil {
+		return nil, deeperror.New(rand.Int63(), "MGET fail", err)
+	} else {
+		return values, nil
 	}
 }
 
@@ -120,7 +150,8 @@ func (s *RedisCache) GetHashInt64(hashName string) (map[string]int64, error) {
 		} else {
 			hash := make(map[string]int64)
 			for i := 0; i < len(list); i += 2 {
-				hash[(list[i]).(string)] = list[i+1].(int64)
+				key, _ := redis.String(list[i], nil)
+				hash[key], _ = redis.Int64(list[i+1], nil)
 			}
 			return hash, nil
 		}
@@ -146,6 +177,18 @@ func arrayOfBytes(results interface{}, err error) ([][]byte, error) {
 		result := make([][]byte, len(values))
 		for i := 0; i < len(values); i++ {
 			result[i] = values[i].([]byte)
+		}
+		return result, nil
+	}
+}
+
+func arrayOfStrings(results interface{}, err error) ([]string, error) {
+	if values, err := redis.Values(results, err); err != nil {
+		return nil, deeperror.New(rand.Int63(), "redis values fail", err)
+	} else {
+		result := make([]string, len(values))
+		for i, value := range values {
+			result[i], _ = redis.String(value, nil)
 		}
 		return result, nil
 	}

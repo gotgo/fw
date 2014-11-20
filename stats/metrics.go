@@ -15,6 +15,16 @@ func NewBasicMeter(name, environment string, tags ...string) BasicMeter {
 	}
 }
 
+func NewCacheMeter(name, environment string, tags ...string) FullMeter {
+	hostName, _ := os.Hostname()
+	return &Metrics{
+		Hostname:    hostName,
+		Name:        name,
+		Environment: environment,
+		Tags:        tags,
+	}
+}
+
 // BasicMeter
 // Discussion Points - Why does duration & size exist on the interface when they can be
 // covered by the other interfaces?
@@ -41,25 +51,11 @@ type BasicMeter interface {
 	Size(name string, size int64)
 }
 
-type OutcomeMeter interface {
-	// Error - this is not meant to log the error, just count that an occur occured
-	Fail(name string)
-	Success(name string)
-
-	Duration(name string, start time.Time)
-}
-
-type ProcedureMeter interface {
-	ProcedureSuccess(procName string, start time.Time)
-	ProcedureFail(procName string, start time.Time)
-}
-
-// EventMeter - this looks a lot like logging. do we want this?
-type CacheMeter interface {
-	Hit(name string)
-	Miss(name string)
-	Size(name string, size int)
-	Duration(name string, start time.Time)
+type FullMeter interface {
+	Hit(name string, start time.Time)
+	Miss(name string, start time.Time)
+	Outcome(name string, outcome string, start time.Time)
+	BasicMeter
 }
 
 type Metrics struct {
@@ -97,9 +93,14 @@ func (m *Metrics) Size(name string, size int64) {
 ///Cache Meter
 
 // Hit - Cache hit
-func (m *Metrics) Hit(name string) {
+func (m *Metrics) Hit(name string, start time.Time) {
 }
 
 // Miss - Cache miss
-func (m *Metrics) Miss(name string) {
+func (m *Metrics) Miss(name string, start time.Time) {
+}
+
+// Outcome
+func (m *Metrics) Outcome(name string, outcome string, start time.Time) {
+
 }

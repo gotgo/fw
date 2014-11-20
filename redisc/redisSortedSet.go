@@ -1,10 +1,13 @@
-package caching
+package redisc
 
 import "github.com/garyburd/redigo/redis"
 
-type ScoredMember struct {
-	Score  int
-	Member []byte
+func ScoredMembersAsKeys(members []*ScoredMember) []string {
+	keys := make([]string, len(members))
+	for i, m := range members {
+		keys[i] = m.Member
+	}
+	return keys
 }
 
 func (rc *RedisCache) ZAdd(key string, members []*ScoredMember) (int, error) {
@@ -26,7 +29,6 @@ func (rc *RedisCache) ZAdd(key string, members []*ScoredMember) (int, error) {
 			j := i * 2
 			items[j] = members[i].Score
 			items[j+1] = members[i].Member
-
 		}
 
 		if added, err := redis.Int(conn.Do("ZADD", command...)); err != nil {
@@ -76,8 +78,9 @@ func (rc *RedisCache) scoredMembers(results interface{}, err error) ([]*ScoredMe
 			j := i * 2
 
 			score, _ := redis.Int(values[j+1], nil)
+			mv, _ := redis.String(values[j], nil)
 			member := &ScoredMember{
-				Member: values[j].([]byte),
+				Member: mv,
 				Score:  score,
 			}
 			result[i] = member
