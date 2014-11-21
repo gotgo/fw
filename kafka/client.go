@@ -119,38 +119,3 @@ func (c *Client) consumerFactory(topic string, partition int32, consumerName str
 		return wrapper, nil
 	}
 }
-
-type consumerWrapper struct {
-	Consumer *sarama.Consumer
-	Channel  chan *ConsumerEvent
-	Stopper  chan struct{}
-}
-
-func (cw *consumerWrapper) Open() {
-	cw.Channel = make(chan *ConsumerEvent)
-	cw.Stopper = make(chan struct{})
-	for {
-		select {
-		case value := <-cw.Consumer.Events():
-			//return wrapped event
-			evt := &ConsumerEvent{
-				Err:       value.Err,
-				Message:   value.Value,
-				Offset:    value.Offset,
-				Partition: value.Partition,
-			}
-			cw.Channel <- evt
-		case <-cw.Stopper:
-			return
-		}
-	}
-}
-
-func (cw *consumerWrapper) Events() <-chan *ConsumerEvent {
-	return cw.Channel
-}
-
-func (cw *consumerWrapper) Close() error {
-	close(cw.Stopper)
-	return cw.Consumer.Close()
-}

@@ -33,15 +33,16 @@ const (
 type From string
 
 const (
-	Panic          From = "panic"
-	Error          From = "error"
-	RequestTimeout From = "reqTimeout"
-	ConnectTimeout From = "conTimeout"
-	IOError        From = "ioError"
-	RequestData    From = "requestData"
-	ResponseData   From = "responseData"
-	MarshalError   From = "marshalError"
-	UnmarshalError From = "unmarshalError"
+	FromPanic          From = "panic"
+	FromError          From = "error"
+	FromErrorRecover   From = "errorPass" //an erorr, and we were able to continue
+	FromRequestTimeout From = "reqTimeout"
+	FromConnectTimeout From = "conTimeout"
+	FromIOError        From = "ioError"
+	FromRequestData    From = "requestData"
+	FromResponseData   From = "responseData"
+	FromMarshalError   From = "marshalError"
+	FromUnmarshalError From = "unmarshalError"
 )
 
 type Tracer interface {

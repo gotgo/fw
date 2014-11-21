@@ -1,5 +1,10 @@
 package kafka
 
+type Producer interface {
+	Close()
+	SendBytes(message []byte, topic, key string) error
+}
+
 type ConsumerEvent struct {
 	Err       error
 	Message   []byte

@@ -4,7 +4,7 @@ import "github.com/garyburd/redigo/redis"
 
 // SAdd returns the number of items added to the set from the items given.
 func (rc *RedisCache) SAdd(key string, items [][]byte) (int, error) {
-	if conn, err := rc.connection(); err != nil {
+	if conn, err := rc.write(); err != nil {
 		return 0, err
 	} else {
 		defer conn.Close()
@@ -19,7 +19,7 @@ func (rc *RedisCache) SAdd(key string, items [][]byte) (int, error) {
 
 // SRem returns the number items removed from the set
 func (rc *RedisCache) SRem(key string, items [][]byte) (int, error) {
-	if conn, err := rc.connection(); err != nil {
+	if conn, err := rc.write(); err != nil {
 		return 0, err
 	} else {
 		defer conn.Close()
@@ -33,7 +33,7 @@ func (rc *RedisCache) SRem(key string, items [][]byte) (int, error) {
 }
 
 func (rc *RedisCache) SRandMember(key string, count int) ([][]byte, error) {
-	if conn, err := rc.connection(); err != nil {
+	if conn, err := rc.read(); err != nil {
 		return nil, err
 	} else {
 		defer conn.Close()
@@ -42,7 +42,7 @@ func (rc *RedisCache) SRandMember(key string, count int) ([][]byte, error) {
 }
 
 func (s *RedisCache) SMembers(listKey string) ([][]byte, error) {
-	if conn, err := s.connection(); err != nil {
+	if conn, err := s.read(); err != nil {
 		return [][]byte{}, err
 	} else {
 		defer conn.Close()
@@ -69,7 +69,7 @@ func (rc *RedisCache) SetAdd(key string, items []interface{}) (int, error) {
 }
 
 func (s *RedisCache) SetRemove(listKey string, member []byte) (int, error) {
-	if conn, err := s.connection(); err != nil {
+	if conn, err := s.write(); err != nil {
 		return 0, err
 	} else {
 		defer conn.Close()

@@ -75,6 +75,9 @@ func (tm *TraceMessage) End() {
 }
 
 func (tm *TraceMessage) Annotate(f From, k string, v interface{}) {
+	if err, ok := v.(error); ok {
+		v = err.Error()
+	}
 	tm.Annotations = append(tm.Annotations, &Annotation{From: f, Name: k, Value: v})
 }
 

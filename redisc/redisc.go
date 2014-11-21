@@ -4,6 +4,7 @@ import "fmt"
 
 type StringsCache interface {
 	MGet(ns string, keys []string) (result []string, err error)
+	MSet(ns string, kv []*KeyValueString) error
 }
 
 type Set interface {

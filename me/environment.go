@@ -15,33 +15,39 @@ func init() {
 		exeName = os.Args[0]
 	}
 
-	App = NewProgram(&ProgramValues{
-		Environment: "env-not-set",
-		IPAddresses: addrs,
-		Name:        exeName,
-	})
+	App = &Program{
+		values: &ProgramValues{
+			IPAddresses: addrs,
+		},
+		conf: &AppConf{
+			Environment: "env-not-set",
+			Name:        exeName,
+		},
+	}
+}
 
+func SetConf(c *AppConf) {
+	App.conf = c
+}
+
+type AppConf struct {
+	// Environment - stage, prod, dev
+	Environment string `json:"environment"`
+	// Name - MyAppName
+	Name string `json:"name"`
 }
 
 type ProgramValues struct {
-	Environment string
 	IPAddresses []net.Addr
-	Name        string
 }
 
 type Program struct {
+	conf   *AppConf
 	values *ProgramValues
 }
 
-func NewProgram(values *ProgramValues) *Program {
-	p := &Program{
-		values: values,
-	}
-	return p
-}
-
 func (p *Program) Environment() string {
-	return p.values.Environment
+	return p.conf.Environment
 }
 
 type Application interface {

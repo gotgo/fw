@@ -2,7 +2,7 @@ package redisc
 
 import "github.com/garyburd/redigo/redis"
 
-func ScoredMembersAsKeys(members []*ScoredMember) []string {
+func GetMembers(members []*ScoredMember) []string {
 	keys := make([]string, len(members))
 	for i, m := range members {
 		keys[i] = m.Member
@@ -15,7 +15,7 @@ func (rc *RedisCache) ZAdd(key string, members []*ScoredMember) (int, error) {
 		return 0, nil
 	}
 
-	if conn, err := rc.connection(); err != nil {
+	if conn, err := rc.write(); err != nil {
 		return 0, err
 	} else {
 		defer conn.Close()
@@ -42,7 +42,7 @@ func (rc *RedisCache) ZAdd(key string, members []*ScoredMember) (int, error) {
 
 // ZRevRange returns a subset ordered in descending order
 func (rc *RedisCache) ZRevRange(key string, start, stop int) ([]*ScoredMember, error) {
-	if conn, err := rc.connection(); err != nil {
+	if conn, err := rc.read(); err != nil {
 		return nil, err
 	} else {
 		defer conn.Close()
@@ -51,7 +51,7 @@ func (rc *RedisCache) ZRevRange(key string, start, stop int) ([]*ScoredMember, e
 }
 
 func (rc *RedisCache) ZIncrBy(key string, amount int, member []byte) (int, error) {
-	if conn, err := rc.connection(); err != nil {
+	if conn, err := rc.write(); err != nil {
 		return 0, err
 	} else {
 		defer conn.Close()
@@ -61,7 +61,7 @@ func (rc *RedisCache) ZIncrBy(key string, amount int, member []byte) (int, error
 
 // ZCard returns the Cardinality (i.e. count) of the set
 func (rc *RedisCache) ZCard(key string) (int, error) {
-	if conn, err := rc.connection(); err != nil {
+	if conn, err := rc.read(); err != nil {
 		return 0, err
 	} else {
 		defer conn.Close()

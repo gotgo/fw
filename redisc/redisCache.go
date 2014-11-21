@@ -12,26 +12,28 @@ import (
 )
 
 type RedisCache struct {
-	Pool    *redis.Pool
-	Log     logging.Logger `inject:""`
-	Encoder func(v interface{}) ([]byte, error)
-	Decoder func(data []byte, v interface{}) error
+	readPool  *redis.Pool
+	writePool *redis.Pool
+	Log       logging.Logger `inject:""`
+	Encoder   func(v interface{}) ([]byte, error)
+	Decoder   func(data []byte, v interface{}) error
 }
 
 // NewRedisCache creates a new cache service connecting to the given
-// hostUri and hostPassword. If there is no hostPassword, then pass an empty string.
-func NewService(hostUri, hostPassword string) (*RedisCache, error) {
-	s := new(RedisCache)
-	s.newPool(hostUri, hostPassword)
-	if err := s.Ping(); err != nil {
+// hostUris and hostPassword. If there is no hostPassword, then pass an empty string.
+func NewService(readUris []string, writeUris []string, hostPassword string) (*RedisCache, error) {
+	r := new(RedisCache)
+	r.readPool = r.newPool(readUris, hostPassword)
+	r.writePool = r.newPool(writeUris, hostPassword)
+	if err := r.Ping(); err != nil {
 		return nil, err
 	} else {
-		return s, nil
+		return r, nil
 	}
 }
 
-func (s *RedisCache) Ping() error {
-	if conn, err := s.connection(); err != nil {
+func (r *RedisCache) Ping() error {
+	if conn, err := r.read(); err != nil {
 		return err
 	} else {
 		defer conn.Close()
@@ -45,8 +47,8 @@ func (s *RedisCache) Ping() error {
 	}
 }
 
-func (s *RedisCache) GetBytes(ns, key string) (result []byte, err error) {
-	if conn, err := s.connection(); err != nil {
+func (r *RedisCache) GetBytes(ns, key string) (result []byte, err error) {
+	if conn, err := r.read(); err != nil {
 		return nil, err
 	} else {
 		defer conn.Close()
@@ -54,7 +56,6 @@ func (s *RedisCache) GetBytes(ns, key string) (result []byte, err error) {
 		useKey := getKey(ns, key)
 		reply, err := conn.Do("GET", useKey)
 		if err != nil {
-			s.Log.Error("Redis GET failed", err)
 			return nil, err
 		} else if reply == nil {
 			//miss
@@ -62,7 +63,6 @@ func (s *RedisCache) GetBytes(ns, key string) (result []byte, err error) {
 		}
 
 		if bytes, err := redis.Bytes(reply, nil); err != nil {
-			s.Log.Error("Redis GET failed", err)
 			return nil, err
 		} else {
 			return bytes, nil
@@ -70,8 +70,8 @@ func (s *RedisCache) GetBytes(ns, key string) (result []byte, err error) {
 	}
 }
 
-func (s *RedisCache) MGet(ns string, keys []string) (result []string, err error) {
-	conn, err := s.connection()
+func (r *RedisCache) MGet(ns string, keys []string) (result []string, err error) {
+	conn, err := r.read()
 	if err != nil {
 		return nil, deeperror.New(rand.Int63(), "Redis connect fail", err)
 	}
@@ -85,15 +85,42 @@ func (s *RedisCache) MGet(ns string, keys []string) (result []string, err error)
 	}
 }
 
-func (s *RedisCache) SetBytes(ns, key string, bytes []byte) error {
-	if conn, err := s.connection(); err != nil {
+type KeyValueString struct {
+	Key   string
+	Value string
+}
+
+func flatten(ns string, kvs []*KeyValueString) []interface{} {
+	r := make([]interface{}, 2*len(kvs))
+	for i, kv := range kvs {
+		j := i * 2
+		r[j] = getKey(ns, kv.Key)
+		r[j+1] = kv.Value
+	}
+	return r
+}
+
+func (r *RedisCache) MSet(ns string, kv []*KeyValueString) error {
+	conn, err := r.write()
+	if err != nil {
+		return deeperror.New(rand.Int63(), "Redis connect fail", err)
+	}
+	defer conn.Close()
+
+	if _, err := conn.Do("MSET", flatten(ns, kv)...); err != nil {
+		return deeperror.New(rand.Int63(), "MSET fail", err)
+	}
+	return nil
+}
+
+func (r *RedisCache) SetBytes(ns, key string, bytes []byte) error {
+	if conn, err := r.write(); err != nil {
 		return err
 	} else {
 		defer conn.Close()
 		useKey := getKey(ns, key)
 
 		if _, err = redis.String(conn.Do("SET", useKey, bytes)); err != nil {
-			s.Log.Error("Redis SET failed", err)
 			return err
 		}
 		return nil
@@ -101,38 +128,35 @@ func (s *RedisCache) SetBytes(ns, key string, bytes []byte) error {
 }
 
 // Get value from cache by key.
-func (cs *RedisCache) Get(ns, key string, instance interface{}) (miss bool, err error) {
-	if bytes, err := cs.GetBytes(ns, key); err != nil {
+func (r *RedisCache) Get(ns, key string, instance interface{}) (miss bool, err error) {
+	if bytes, err := r.GetBytes(ns, key); err != nil {
 		return true, err
 	} else if bytes == nil {
 		return true, nil
-	} else if err = cs.unmarshal(bytes, &instance); err != nil {
-		cs.Log.UnmarshalFail("Redis GET unmarshal fail", bytes, err)
+	} else if err = r.unmarshal(bytes, &instance); err != nil {
 		return true, err
 	}
 	return false, nil
 }
 
 // Set a value in cache by the given key.
-func (s *RedisCache) Set(ns, key string, instance interface{}) error {
-	if conn, err := s.connection(); err != nil {
+func (r *RedisCache) Set(ns, key string, instance interface{}) error {
+	if conn, err := r.write(); err != nil {
 		return err
 	} else {
 		defer conn.Close()
 
-		if value, err := s.marshal(instance); err != nil {
-			s.Log.MarshalFail("Redis marshal error", instance, err)
+		if value, err := r.marshal(instance); err != nil {
 			return err
 		} else if _, err = redis.String(conn.Do("SET", key, value)); err != nil {
-			s.Log.Error("Redis SET fail", err)
 			return err
 		}
 		return nil
 	}
 }
 
-func (s *RedisCache) Increment(hashName, fieldName string, by int) (int64, error) {
-	if conn, err := s.connection(); err != nil {
+func (r *RedisCache) Increment(hashName, fieldName string, by int) (int64, error) {
+	if conn, err := r.write(); err != nil {
 		return -1, err
 	} else {
 		defer conn.Close()
@@ -140,8 +164,8 @@ func (s *RedisCache) Increment(hashName, fieldName string, by int) (int64, error
 	}
 }
 
-func (s *RedisCache) GetHashInt64(hashName string) (map[string]int64, error) {
-	if conn, err := s.connection(); err != nil {
+func (r *RedisCache) GetHashInt64(hashName string) (map[string]int64, error) {
+	if conn, err := r.read(); err != nil {
 		return nil, err
 	} else {
 		defer conn.Close()
@@ -158,13 +182,23 @@ func (s *RedisCache) GetHashInt64(hashName string) (map[string]int64, error) {
 	}
 }
 
-func (s *RedisCache) connection() (redis.Conn, error) {
-	if s.Pool == nil {
+func (r *RedisCache) write() (redis.Conn, error) {
+	return r.connection(true)
+}
+func (r *RedisCache) read() (redis.Conn, error) {
+	return r.connection(false)
+}
+func (r *RedisCache) connection(write bool) (redis.Conn, error) {
+	pool := r.readPool
+	if write {
+		pool = r.writePool
+	}
+	if pool == nil {
 		return nil, errors.New("pool is null")
 	}
-	conn, err := s.Pool.Dial()
+	conn, err := pool.Dial()
 	if err != nil {
-		s.Log.Error("Redis Dial Error", err)
+		r.Log.Error("Redis Dial Error", err)
 		return nil, err
 	}
 	return conn, nil
@@ -194,36 +228,42 @@ func arrayOfStrings(results interface{}, err error) ([]string, error) {
 	}
 }
 
-func (cs *RedisCache) marshal(v interface{}) ([]byte, error) {
-	encoder := cs.Encoder
+func (r *RedisCache) marshal(v interface{}) ([]byte, error) {
+	encoder := r.Encoder
 	if encoder == nil {
 		encoder = json.Marshal
 	}
 	return encoder(v)
 }
 
-func (cs *RedisCache) unmarshal(data []byte, v interface{}) error {
-	decoder := cs.Decoder
+func (r *RedisCache) unmarshal(data []byte, v interface{}) error {
+	decoder := r.Decoder
 	if decoder == nil {
 		decoder = json.Unmarshal
 	}
 	return decoder(data, &v)
 }
 
-func (cs *RedisCache) newPool(server, password string) {
-	cs.Pool = &redis.Pool{
+func (r *RedisCache) newPool(servers []string, password string) *redis.Pool {
+	pickServer := func() string {
+		i := rand.Int31n(int32(len(servers)))
+		return servers[i]
+	}
+
+	return &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
+			server := pickServer()
 			c, err := redis.Dial("tcp", server)
 			if err != nil {
-				cs.Log.Error("can not dial redis instance: "+server, err)
+				r.Log.Error("can not dial redis instance: "+server, err)
 				return nil, err
 			}
 			if password != "" {
 				if _, err := c.Do("AUTH", password); err != nil {
 					c.Close()
-					cs.Log.Error("incorrect redis password for instance: "+server, err)
+					r.Log.Error("incorrect redis password for instance: "+server, err)
 					return nil, err
 				}
 			}
@@ -231,9 +271,6 @@ func (cs *RedisCache) newPool(server, password string) {
 		},
 		TestOnBorrow: func(c redis.Conn, t time.Time) error {
 			_, err := c.Do("PING")
-			if err != nil {
-				cs.Log.Warn("failed to ping redis instance", &logging.KeyValue{"instance", server})
-			}
 			return err
 		},
 	}
