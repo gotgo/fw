@@ -98,8 +98,8 @@ func (tm *TraceMessage) AnnotateBinary(f From, k string, reader io.Reader, ct st
 	}
 }
 
-func (tm *TraceMessage) Error(name string, value interface{}) {
-	tm.Annotations = append(tm.Annotations, &Annotation{Name: name, Value: value, From: Error})
+func (tm *TraceMessage) Error(name string, value error) { //helper
+	tm.Annotate(FromError, name, value)
 }
 
 func (tm *TraceMessage) RequestCompleted() {

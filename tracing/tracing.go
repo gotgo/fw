@@ -35,7 +35,7 @@ type From string
 const (
 	FromPanic          From = "panic"
 	FromError          From = "error"
-	FromErrorRecover   From = "errorPass" //an erorr, and we were able to continue
+	FromErrorRecover   From = "errorRecover" //an erorr, and we were able to continue
 	FromRequestTimeout From = "reqTimeout"
 	FromConnectTimeout From = "conTimeout"
 	FromIOError        From = "ioError"

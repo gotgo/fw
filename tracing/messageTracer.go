@@ -27,7 +27,7 @@ func (td *MessageTracer) AnnotateBinary(f From, k string, reader io.Reader, ct s
 	td.message.AnnotateBinary(f, k, reader, ct)
 }
 
-func (td *MessageTracer) Error(name string, value interface{}) {
+func (td *MessageTracer) Error(name string, value error) {
 	td.message.Error(name, value)
 }
 
