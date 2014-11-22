@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/amattn/deeperror"
@@ -12,8 +13,8 @@ import (
 )
 
 type RedisCache struct {
-	readPool  *redis.Pool
-	writePool *redis.Pool
+	readPool  *roundRobinPools
+	writePool *roundRobinPools
 	Log       logging.Logger `inject:""`
 	Encoder   func(v interface{}) ([]byte, error)
 	Decoder   func(data []byte, v interface{}) error
@@ -189,14 +190,14 @@ func (r *RedisCache) read() (redis.Conn, error) {
 	return r.connection(false)
 }
 func (r *RedisCache) connection(write bool) (redis.Conn, error) {
-	pool := r.readPool
+	pools := r.readPool
 	if write {
-		pool = r.writePool
+		pools = r.writePool
 	}
-	if pool == nil {
+	if pools == nil {
 		return nil, errors.New("pool is null")
 	}
-	conn, err := pool.Dial()
+	conn, err := pools.GetPool().Dial()
 	if err != nil {
 		r.Log.Error("Redis Dial Error", err)
 		return nil, err
@@ -244,34 +245,50 @@ func (r *RedisCache) unmarshal(data []byte, v interface{}) error {
 	return decoder(data, &v)
 }
 
-func (r *RedisCache) newPool(servers []string, password string) *redis.Pool {
-	pickServer := func() string {
-		i := rand.Int31n(int32(len(servers)))
-		return servers[i]
-	}
+// as per @GaryBurd suggestion
+type roundRobinPools struct {
+	mu    sync.Mutex
+	i     int
+	pools []*redis.Pool
+}
 
-	return &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			server := pickServer()
-			c, err := redis.Dial("tcp", server)
-			if err != nil {
-				r.Log.Error("can not dial redis instance: "+server, err)
-				return nil, err
-			}
-			if password != "" {
-				if _, err := c.Do("AUTH", password); err != nil {
-					c.Close()
-					r.Log.Error("incorrect redis password for instance: "+server, err)
+func (p *roundRobinPools) GetPool() *redis.Pool {
+	p.mu.Lock()
+	p.i = (p.i + 1) % len(p.pools)
+	p.mu.Unlock()
+	return p.pools[p.i]
+}
+
+// creates a pool of connection pools
+func (r *RedisCache) newPool(servers []string, password string) *roundRobinPools {
+	pools := make([]*redis.Pool, len(servers))
+	for i, s := range servers {
+		pools[i] = &redis.Pool{
+			MaxIdle:     3,
+			IdleTimeout: 240 * time.Second,
+			Dial: func() (redis.Conn, error) {
+				server := s
+				c, err := redis.Dial("tcp", server)
+				if err != nil {
+					r.Log.Error("can not dial redis instance: "+server, err)
 					return nil, err
 				}
-			}
-			return c, err
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
+				if password != "" {
+					if _, err := c.Do("AUTH", password); err != nil {
+						c.Close()
+						r.Log.Error("incorrect redis password for instance: "+server, err)
+						return nil, err
+					}
+				}
+				return c, err
+			},
+			TestOnBorrow: func(c redis.Conn, t time.Time) error {
+				_, err := c.Do("PING")
+				return err
+			},
+		}
+	}
+	return &roundRobinPools{
+		pools: pools,
 	}
 }
