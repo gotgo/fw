@@ -3,6 +3,7 @@ package kafka
 import (
 	"errors"
 	"os"
+	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/gotgo/fw/logging"
@@ -12,6 +13,7 @@ type Client struct {
 	Hosts  []string
 	Log    logging.Logger `inject:""`
 	client *sarama.Client
+	send   chan *sarama.MessageToSend
 }
 
 func Connect(hosts []string) (*Client, error) {
@@ -25,6 +27,23 @@ func Connect(hosts []string) (*Client, error) {
 		client.client = sclient
 	}
 	return client, nil
+}
+
+func (c *Client) runProducer() {
+	producer, err := c.producer()
+	if err != nil {
+		panic(err)
+	}
+	defer producer.Close()
+	for {
+		select {
+		case message := <-c.send:
+			producer.Input() <- message
+		case err := <-producer.Errors():
+			//what do we do?
+			panic(err.Err)
+		}
+	}
 }
 
 func (c *Client) doConnect() (*sarama.Client, error) {
@@ -58,9 +77,9 @@ func (c *Client) producer() (*sarama.Producer, error) {
 	}
 
 	cfg := sarama.NewProducerConfig()
-	cfg.Partitioner = sarama.NewHashPartitioner()
-	cfg.MaxBufferedBytes = 2
-	cfg.MaxBufferTime = 2
+	cfg.Partitioner = func() sarama.Partitioner { return sarama.NewHashPartitioner() }
+	cfg.FlushMsgCount = 1
+	cfg.FlushFrequency = time.Millisecond * 100
 
 	if producer, err := sarama.NewProducer(client, cfg); err != nil {
 		return nil, err
@@ -69,35 +88,15 @@ func (c *Client) producer() (*sarama.Producer, error) {
 	}
 }
 
-func (c *Client) SendBytes(message []byte, topic, key string) error {
-	producer, err := c.producer()
-	if err != nil {
-		return err
-	}
-	defer producer.Close()
-
+func (c *Client) SendBytes(bts []byte, topic, key string) {
 	encodedKey := sarama.StringEncoder(key)
-	err = producer.SendMessage(topic, encodedKey, sarama.ByteEncoder(message))
-	if err != nil {
-		return err
-	}
-	return nil
+	c.send <- &sarama.MessageToSend{Topic: topic, Key: encodedKey, Value: sarama.ByteEncoder(bts)}
 }
 
-func (c *Client) SendString(message, topic, key string) error {
-	producer, err := c.producer()
-	if err != nil {
-		return err
-	}
-	defer producer.Close()
-
+func (c *Client) SendString(message, topic, key string) {
 	encodedKey := sarama.StringEncoder(key)
 	payload := sarama.StringEncoder(message)
-	err = producer.SendMessage(topic, encodedKey, payload)
-	if err != nil {
-		return err
-	}
-	return nil
+	c.send <- &sarama.MessageToSend{Topic: topic, Key: encodedKey, Value: payload}
 }
 
 func (c *Client) NewConsumer(name, topic string, startingOffsets map[PartitionIndex]Offset) (*Consumer, error) {
