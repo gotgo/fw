@@ -50,6 +50,10 @@ func (p *Program) Environment() string {
 	return p.conf.Environment
 }
 
+func (p *Program) Name() string {
+	return p.conf.Name
+}
+
 type Application interface {
 	Environment() string
 }

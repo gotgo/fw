@@ -21,7 +21,7 @@ type PartitionIndex int32
 type Offset int64
 
 type Sender interface {
-	SendBytes(message []byte, topic, key string) error
+	SendBytes(message []byte, topic, key string)
 }
 
 // DividePartitions - splits the number of partitions in to buckets numbering the splitBy
