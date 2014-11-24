@@ -43,6 +43,8 @@ const (
 	FromResponseData   From = "responseData"
 	FromMarshalError   From = "marshalError"
 	FromUnmarshalError From = "unmarshalError"
+	FromTrace          From = "trace"
+	FromInfo           From = "info"
 )
 
 type Tracer interface {
