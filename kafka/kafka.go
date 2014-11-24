@@ -2,7 +2,7 @@ package kafka
 
 type Producer interface {
 	Close()
-	SendBytes(message []byte, topic, key string) error
+	SendBytes(message []byte, topic, key string)
 }
 
 type ConsumerEvent struct {
