@@ -253,6 +253,9 @@ type roundRobinPools struct {
 }
 
 func (p *roundRobinPools) GetPool() *redis.Pool {
+	if len(p.pools) == 0 {
+		return nil
+	}
 	p.mu.Lock()
 	p.i = (p.i + 1) % len(p.pools)
 	p.mu.Unlock()
