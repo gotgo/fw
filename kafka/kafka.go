@@ -2,7 +2,7 @@ package kafka
 
 type Producer interface {
 	Close()
-	SendBytes(message []byte, topic, key string)
+	SendBytes(message []byte, topic, key string) error
 }
 
 type ConsumerEvent struct {
@@ -21,7 +21,7 @@ type PartitionIndex int32
 type Offset int64
 
 type Sender interface {
-	SendBytes(message []byte, topic, key string)
+	SendBytes(message []byte, topic, key string) error
 }
 
 // DividePartitions - splits the number of partitions in to buckets numbering the splitBy
