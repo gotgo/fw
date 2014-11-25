@@ -80,8 +80,9 @@ func (d *Coordinator) from(c *Coordinator) {
 func (d *Coordinator) feed() {
 	for f := range d.todo {
 		d.rateLimiter <- nil //rate limited, will block at limit
-		a := f.Steps[d.name].Action
-		go a.Action(func() { d.completed <- f })
+		currentStep := f.Steps[d.name]
+		a := currentStep.Action
+		go a.Action(f.Data, func() { d.completed <- f })
 	}
 }
 

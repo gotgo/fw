@@ -2,8 +2,11 @@ package util
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"reflect"
+
+	"code.google.com/p/go-uuid/uuid"
 )
 
 // MapToStruct is a way to deserialize a dictionary of strings into a struct
@@ -35,4 +38,9 @@ func Invoke(any interface{}, name string, args ...interface{}) {
 		inputs[i] = reflect.ValueOf(args[i])
 	}
 	reflect.ValueOf(any).MethodByName(name).Call(inputs)
+}
+
+func NewUid() string {
+	uid := uuid.NewRandom()
+	return base64.StdEncoding.EncodeToString(uid)
 }
