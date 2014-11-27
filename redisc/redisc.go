@@ -3,6 +3,9 @@ package redisc
 import "fmt"
 
 type StringsCache interface {
+	Get(ns, key string, instance interface{}) (miss bool, err error)
+	Set(ns, key string, instance interface{}) error
+	SetNX(ns, key string, instance interface{}) error
 	MGet(ns string, keys []string) (result []string, err error)
 	MSet(ns string, kv []*KeyValueString) error
 }
