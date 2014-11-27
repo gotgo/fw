@@ -77,8 +77,8 @@ func (rc *RedisCache) scoredMembers(results interface{}, err error) ([]*ScoredMe
 		for i := range result {
 			j := i * 2
 
-			score, _ := redis.Int(values[j+1], nil)
 			mv, _ := redis.String(values[j], nil)
+			score, _ := redis.Int(values[j+1], nil)
 			member := &ScoredMember{
 				Member: mv,
 				Score:  score,
