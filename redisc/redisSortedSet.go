@@ -50,7 +50,7 @@ func (rc *RedisCache) ZRevRange(key string, start, stop int) ([]*ScoredMember, e
 	}
 }
 
-func (rc *RedisCache) ZIncrBy(key string, amount int, member []byte) (int, error) {
+func (rc *RedisCache) ZIncrBy(key string, amount int, member interface{}) (int, error) {
 	if conn, err := rc.write(); err != nil {
 		return 0, err
 	} else {
