@@ -140,16 +140,16 @@ func (r *RedisCache) Get(ns, key string, instance interface{}) (miss bool, err e
 	return false, nil
 }
 
-func (r *RedisCache) SetNX(ns, key string, instance interface{}) error {
-	return r.setWithOverwrite(ns, key, instance, false)
+func (r *RedisCache) SetNX(ns, key string, value string) error {
+	return r.setWithOverwrite(ns, key, value, false)
 }
 
-func (r *RedisCache) Set(ns, key string, instance interface{}) error {
-	return r.setWithOverwrite(ns, key, instance, true)
+func (r *RedisCache) Set(ns, key string, value string) error {
+	return r.setWithOverwrite(ns, key, value, true)
 }
 
 // Set a value in cache by the given key.
-func (r *RedisCache) setWithOverwrite(ns, key string, instance interface{}, overwrite bool) error {
+func (r *RedisCache) setWithOverwrite(ns, key string, value string, overwrite bool) error {
 	if conn, err := r.write(); err != nil {
 		return err
 	} else {
@@ -160,9 +160,7 @@ func (r *RedisCache) setWithOverwrite(ns, key string, instance interface{}, over
 			command = "SETNX"
 		}
 		useKey := getKey(ns, key)
-		if value, err := r.marshal(instance); err != nil {
-			return err
-		} else if _, err = redis.String(conn.Do(command, useKey, value)); err != nil {
+		if _, err = redis.String(conn.Do(command, useKey, value)); err != nil {
 			return err
 		}
 		return nil

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"reflect"
+	"strings"
 
 	"code.google.com/p/go-uuid/uuid"
 )
@@ -43,4 +44,8 @@ func Invoke(any interface{}, name string, args ...interface{}) {
 func NewUid() string {
 	uid := uuid.NewRandom()
 	return base64.StdEncoding.EncodeToString(uid)
+}
+
+func NoQuotes(target string) string {
+	return strings.Replace(target, "\"", "", -1)
 }
