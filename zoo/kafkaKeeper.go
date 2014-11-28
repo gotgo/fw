@@ -31,6 +31,15 @@ type KafkaKeeper struct {
 	State    *KafkaState
 }
 
+func TestConnect(hosts []string) error {
+	if conn, _, err := zk.Connect(hosts, connectTimeout); err != nil {
+		return err
+	} else {
+		conn.Close()
+		return nil
+	}
+}
+
 func (k *KafkaKeeper) connect() *zk.Conn {
 	conn, _, err := zk.Connect(k.hosts, connectTimeout)
 	if err != nil {
@@ -126,15 +135,15 @@ func (z *KafkaKeeper) GetOffsets() (map[int]int64, error) {
 	return offsets, nil
 }
 
-func (z *KafkaKeeper) SetOffset(partition, offset int) error {
+func (z *KafkaKeeper) SetOffset(partition int32, offset int64) error {
 	conn := z.connect()
 	defer conn.Close()
 
 	err := z.ensureSetup(conn)
 	if err != nil {
-		return me.Err(err, "failed to set offset on partition: "+strconv.Itoa(partition))
+		return me.Err(err, fmt.Sprintf("failed to set offset on partition: %d", partition))
 	}
-	path := path.Join(z.Consumer.PartitionsPath(), strconv.Itoa(partition), "consumed")
+	path := path.Join(z.Consumer.PartitionsPath(), fmt.Sprintf("%d", partition), "consumed")
 
 	//force version for now
 	_, version, err := z.get(conn, path)
@@ -142,7 +151,7 @@ func (z *KafkaKeeper) SetOffset(partition, offset int) error {
 		return err
 	}
 
-	err = z.set(conn, path, strconv.Itoa(offset), version)
+	err = z.set(conn, path, fmt.Sprintf("%d", offset), version)
 	if err != nil {
 		return me.Err(err, "failed to set value for path: "+path)
 	}

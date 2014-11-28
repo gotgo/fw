@@ -111,7 +111,7 @@ func (c *Client) SendBytes(bts []byte, topic, key string) error {
 	return c.sendSync(bts, topic, key)
 }
 
-func (c *Client) NewConsumer(name, topic string, startingOffsets map[PartitionIndex]Offset) (*Consumer, error) {
+func (c *Client) NewConsumer(name, topic string, startingOffsets map[int]int64) (*Consumer, error) {
 	return NewConsumer(name, topic, startingOffsets, c.consumerFactory)
 }
 

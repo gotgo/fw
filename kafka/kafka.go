@@ -17,9 +17,6 @@ type ConsumerChannel interface {
 	Close() error
 }
 
-type PartitionIndex int32
-type Offset int64
-
 type Sender interface {
 	SendBytes(message []byte, topic, key string) error
 }

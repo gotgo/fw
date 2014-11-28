@@ -7,7 +7,7 @@ import (
 
 type Consumer struct {
 	Name            string
-	StartingOffsets map[PartitionIndex]Offset
+	StartingOffsets map[int]int64
 	Log             logging.Logger `inject:""`
 	Topic           string
 	Factory         func(topic string, partition int32, consumerName string, startAtOffset int64) (ConsumerChannel, error)
@@ -15,7 +15,7 @@ type Consumer struct {
 	events          chan *ConsumerEvent
 }
 
-func NewConsumer(name, topic string, startingOffsets map[PartitionIndex]Offset, factory func(topic string, partition int32, consumerName string, startAtOffset int64) (ConsumerChannel, error)) (*Consumer, error) {
+func NewConsumer(name, topic string, startingOffsets map[int]int64, factory func(topic string, partition int32, consumerName string, startAtOffset int64) (ConsumerChannel, error)) (*Consumer, error) {
 	consumer := new(Consumer)
 	consumer.Name = name
 	consumer.StartingOffsets = startingOffsets
