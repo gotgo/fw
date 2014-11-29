@@ -60,12 +60,10 @@ func (c *Consumer) setupConsumers() []*sarama.Consumer {
 
 func (c *Consumer) consume(consumers []*sarama.Consumer) {
 	c.stopper = make(chan struct{})
-	for _, consumer := range consumers {
-		defer consumer.Close()
-	}
 
 	for _, consumer := range consumers {
 		go func() {
+			local := consumer //closure capture
 			select {
 			case value := <-consumer.Events():
 				evt := &ConsumerEvent{
@@ -76,6 +74,7 @@ func (c *Consumer) consume(consumers []*sarama.Consumer) {
 				}
 				c.events <- evt
 			case <-c.stopper:
+				local.Close()
 				return
 			}
 		}()

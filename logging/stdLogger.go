@@ -15,19 +15,25 @@ type StdLogger struct {
 }
 
 func (l *StdLogger) Log(m *LogMessage) {
+	bytes, err := json.Marshal(m)
+	if err != nil {
+		l.MarshalFail("could not log event because of marshal fail", m, err)
+		return
+	}
+	str := string(bytes)
 	switch m.Kind {
 	case Inform, Event:
-		logger.Info(m)
+		logger.Info(str)
 	case Debug:
-		logger.Debug(m)
+		logger.Debug(str)
 	case Warn, Timeout:
-		logger.Warn(m)
+		logger.Warn(str)
 	case Error, Marshal, Unmarshal, Connect:
-		logger.Error(m)
+		logger.Error(str)
 	case Panic:
-		logger.Critical(m)
+		logger.Critical(str)
 	default:
-		logger.Info(m)
+		logger.Info(str)
 	}
 }
 
@@ -40,7 +46,12 @@ func (l *StdLogger) MarshalFail(m string, obj interface{}, err error) {
 		Value:   fmt.Sprintf("%#v", obj),
 		Kind:    "marshalFail",
 	}
-	logger.Error(lm)
+	bytes, err := json.Marshal(lm)
+	if err != nil {
+		l.MarshalFail("could not log event because of marshal fail", m, err)
+		return
+	}
+	logger.Error(string(bytes))
 }
 
 func (l *StdLogger) UnmarshalFail(m string, data []byte, err error) {
@@ -58,7 +69,12 @@ func (l *StdLogger) UnmarshalFail(m string, data []byte, err error) {
 		Value:   persistedData,
 		Kind:    "unmarshalFail",
 	}
-	logger.Error(lm)
+	bytes, err := json.Marshal(lm)
+	if err != nil {
+		l.MarshalFail("could not log event because of marshal fail", m, err)
+		return
+	}
+	logger.Error(string(bytes))
 }
 
 func (l *StdLogger) Timeout(m string, err error, kv ...*KeyValue) {
@@ -69,7 +85,12 @@ func (l *StdLogger) Timeout(m string, err error, kv ...*KeyValue) {
 		Kind:    "timeout",
 	}
 	SetKeyValue(lm, kv...)
-	logger.Warn(lm)
+	bytes, err := json.Marshal(lm)
+	if err != nil {
+		l.MarshalFail("could not log event because of marshal fail", m, err)
+		return
+	}
+	logger.Warn(string(bytes))
 }
 
 func (l *StdLogger) ConnectFail(m string, err error, kv ...*KeyValue) {
@@ -80,7 +101,12 @@ func (l *StdLogger) ConnectFail(m string, err error, kv ...*KeyValue) {
 		Kind:    "connectFail",
 	}
 	SetKeyValue(lm, kv...)
-	logger.Warn(lm)
+	bytes, err := json.Marshal(lm)
+	if err != nil {
+		l.MarshalFail("could not log event because of marshal fail", m, err)
+		return
+	}
+	logger.Warn(string(bytes))
 }
 
 func (l *StdLogger) WillPanic(m string, err error, kv ...*KeyValue) {
@@ -187,5 +213,10 @@ func (l *StdLogger) Debug(m string, kv ...*KeyValue) {
 	}
 
 	SetKeyValue(lm, kv...)
-	logger.Debug(lm)
+	if bytes, err := json.Marshal(lm); err != nil {
+		l.MarshalFail("could not log event because of marshal fail", lm, err)
+		return
+	} else {
+		logger.Debug(string(bytes))
+	}
 }
