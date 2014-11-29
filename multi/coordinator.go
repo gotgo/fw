@@ -1,22 +1,28 @@
 package multi
 
 import (
+	"fmt"
 	"sync/atomic"
-	"time"
+
+	"github.com/gotgo/fw/me"
 )
 
 //  NewCoordintor
-func NewCoordinator(name string, concurrency int, retries int) *Coordinator {
+func NewCoordinator(name string, concurrency int, retries int, maxItems int) *Coordinator {
+	size := maxItems
 	d := &Coordinator{
-		todo:        make(chan *Flow),
+		todo:        make(chan *Flow, size),
+		retry:       make(chan *Flow, size),
 		rateLimiter: make(chan interface{}, concurrency),
-		completed:   make(chan *Flow),
-		stop:        make(chan interface{}),
-		finished:    make(chan struct{}),
-		in:          new(int32),
-		out:         new(int32),
+		completed:   make(chan *Flow, size),
+		stop:        make(chan interface{}, size),
+		finished:    make(chan struct{}, size),
+		Success:     make(chan *Flow, size),
+		Fail:        make(chan *Flow, size),
+		queued:      new(int32),
 		name:        name,
 		retries:     retries,
+		maxSize:     size,
 	}
 	return d
 }
@@ -26,6 +32,7 @@ type Coordinator struct {
 	todo        chan *Flow
 	rateLimiter chan interface{}
 	completed   chan *Flow
+	retry       chan *Flow
 
 	finished chan struct{}
 	stop     chan interface{}
@@ -36,8 +43,8 @@ type Coordinator struct {
 	name    string
 	retries int
 
-	in  *int32
-	out *int32
+	queued  *int32
+	maxSize int
 }
 
 func (d *Coordinator) Finished() <-chan struct{} {
@@ -45,22 +52,26 @@ func (d *Coordinator) Finished() <-chan struct{} {
 }
 
 func (d *Coordinator) Run() {
-	go d.feed()
-	go d.process()
+	go d.feedTodo()
+	go d.feedRetry()
+	go d.handleResults()
 }
 
-func (d *Coordinator) NoMore() {
-	close(d.todo)
-	d.stop <- nil
+func (c *Coordinator) NoMore() {
+	close(c.todo)
+	c.stop <- nil
 }
 
-func (d *Coordinator) isComplete() bool {
-	return d.in == d.out
+func (c *Coordinator) isComplete() bool {
+	return *c.queued == int32(0)
 }
 
 func (d *Coordinator) Act(flows []*Flow) {
+	if len(flows) > d.maxSize {
+		panic("Act() the lengths of the flows can not be greater than the max")
+	}
 	for _, f := range flows {
-		atomic.AddInt32(d.in, 1)
+		atomic.AddInt32(d.queued, 1)
 		d.todo <- f
 	}
 }
@@ -71,48 +82,69 @@ func (d *Coordinator) From(c *Coordinator) {
 
 func (d *Coordinator) from(c *Coordinator) {
 	for f := range c.Success {
-		atomic.AddInt32(d.in, 1)
+		atomic.AddInt32(d.queued, 1)
 		d.todo <- f
 	}
 	d.NoMore()
 }
 
-func (d *Coordinator) feed() {
-	for f := range d.todo {
-		d.rateLimiter <- nil //rate limited, will block at limit
-		currentStep := f.Steps[d.name]
-		a := currentStep.Action
-		go a.Action(f.Data, func() { d.completed <- f })
+func (c *Coordinator) process(f *Flow) {
+	local := f
+	currentStep := f.Steps[c.name]
+	if currentStep == nil {
+		panic(me.NewErr("unknown step " + c.name))
+	}
+	go currentStep.Action.Action(local.Data, func() { c.completed <- local })
+	c.rateLimiter <- nil //rate limited, will block at limit
+}
+
+func (c *Coordinator) feedTodo() {
+	for f := range c.todo {
+		c.process(f)
 	}
 }
 
-func (d *Coordinator) process() {
+func (c *Coordinator) feedRetry() {
+	for f := range c.retry {
+		c.process(f)
+	}
+}
+
+func (d *Coordinator) handleResults() {
+	shutdown := false
 	for {
 		select {
 		case f := <-d.completed:
 			<-d.rateLimiter //remove one, any one, to allow more
 			s := f.Steps[d.name]
 			s.Attempts++
+			flow := f //local
 
 			if s.Action.Error() != nil {
-				if s.Attempts > 3 {
-					d.Fail <- f
-					atomic.AddInt32(d.out, 1)
+				if s.Attempts > d.retries {
+					d.Fail <- flow
+					atomic.AddInt32(d.queued, -1)
 				} else {
-					d.todo <- f
+					d.retry <- flow
+					fmt.Println("retry")
 				}
 			} else {
-				d.Success <- f
-				atomic.AddInt32(d.out, 1)
+				d.Success <- flow
+				atomic.AddInt32(d.queued, -1)
+			}
+
+			if shutdown && d.isComplete() {
+				close(d.stop)
 			}
 		case <-d.stop:
 			if d.isComplete() {
 				close(d.finished)
 				close(d.Success)
 				close(d.Fail)
+				close(d.retry)
 				return
 			} else {
-				go func() { d.stop <- time.After(time.Second) }()
+				shutdown = true
 			}
 		}
 	}
