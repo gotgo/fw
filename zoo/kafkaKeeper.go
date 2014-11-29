@@ -11,14 +11,18 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 )
 
-const connectTimeout = 3 * time.Second
+const (
+	connectTimeout        = 3 * time.Second
+	defaultKafkaRoot      = "kafka"
+	defaultKafkaTopicRoot = "kafka-topics"
+)
 
 func NewKafkaKeeper(hosts []string, c *TopicConsumer, s *KafkaState) *KafkaKeeper {
 	if c.Root == "" {
-		c.Root = "kafka-topics"
+		c.Root = defaultKafkaTopicRoot
 	}
 	if s.Root == "" {
-		s.Root = "kakfa"
+		s.Root = defaultKafkaRoot
 	}
 	return &KafkaKeeper{
 		acl:      zk.WorldACL(zk.PermAll),
