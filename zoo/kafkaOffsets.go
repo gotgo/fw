@@ -2,14 +2,15 @@ package zoo
 
 type KafkaOffsets struct {
 	ZookeeperHosts []string
-	AppName        string
+	// ConsumerApp - consumer application get's it's own distinct offsets on the topic
+	ConsumerApp string
 }
 
 func (ko *KafkaOffsets) Offsets(topic string) (map[int]int64, error) {
 	hosts := ko.ZookeeperHosts
 	tc := &TopicConsumer{
-		Topic: topic,
-		App:   ko.AppName,
+		Topic:       topic,
+		ConsumerApp: ko.ConsumerApp,
 	}
 	ks := &KafkaState{
 		Topic: topic,
@@ -21,8 +22,8 @@ func (ko *KafkaOffsets) Offsets(topic string) (map[int]int64, error) {
 func (ko *KafkaOffsets) SetOffset(topic string, partition int32, offset int64) error {
 	hosts := ko.ZookeeperHosts
 	tc := &TopicConsumer{
-		Topic: topic,
-		App:   ko.AppName,
+		Topic:       topic,
+		ConsumerApp: ko.ConsumerApp,
 	}
 	ks := &KafkaState{
 		Topic: topic,

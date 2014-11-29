@@ -15,13 +15,14 @@ func (ks *KafkaState) PartitionsPath() string {
 
 type TopicConsumer struct {
 	Topic string
-	App   string
+	// ConsumerApp - typically the name of the app or function for it's own dedicated set of offsets
+	ConsumerApp string
 	// Root - suggested name /kafka-topics
 	Root string
 }
 
 func (tc *TopicConsumer) basePath() string {
-	return path.Join("/", tc.Root, tc.Topic, "apps", tc.App)
+	return path.Join("/", tc.Root, tc.Topic, "apps", tc.ConsumerApp)
 }
 
 func (tc *TopicConsumer) PartitionsPath() string {
