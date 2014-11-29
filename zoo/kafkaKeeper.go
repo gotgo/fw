@@ -51,13 +51,13 @@ func (k *KafkaKeeper) connect() *zk.Conn {
 
 func (z *KafkaKeeper) ensureExists(c *zk.Conn, p string, data string) error {
 	parts := strings.Split(p, "/")
-	prev := "/"
+	current := "/"
 	for _, part := range parts {
 		if len(part) == 0 {
 			continue
 		}
 
-		current := path.Join(prev, part)
+		current := path.Join(current, part)
 		fmt.Printf("cheking for %s", current)
 		exists, _, err := c.Exists(current)
 		if err != nil {
