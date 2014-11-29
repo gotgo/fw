@@ -10,104 +10,86 @@ type Consumer struct {
 	StartingOffsets map[int]int64
 	Log             logging.Logger `inject:""`
 	Topic           string
-	Factory         func(topic string, partition int32, consumerName string, startAtOffset int64) (ConsumerChannel, error)
 	stopper         chan struct{}
 	events          chan *ConsumerEvent
+	client          *sarama.Client
 }
 
-func NewConsumer(name, topic string, startingOffsets map[int]int64, factory func(topic string, partition int32, consumerName string, startAtOffset int64) (ConsumerChannel, error)) (*Consumer, error) {
-	consumer := new(Consumer)
-	consumer.Name = name
-	consumer.StartingOffsets = startingOffsets
-	consumer.Topic = topic
-	consumer.Factory = factory
-	if err := consumer.consumePartitions(); err != nil {
-		return nil, err
-	} else {
-		return consumer, nil
+func NewConsumer(client *sarama.Client, name, topic string, startingOffsets map[int]int64) *Consumer {
+	consumer := &Consumer{
+		Name:            name,
+		StartingOffsets: startingOffsets,
+		Topic:           topic,
+		events:          make(chan *ConsumerEvent),
+		client:          client,
 	}
+	return consumer
+}
+
+// Run - Nonblocking
+func (c *Consumer) Run() {
+	consumers := c.setupConsumers()
+	c.consume(consumers)
 }
 
 func (c *Consumer) Events() <-chan *ConsumerEvent {
 	return c.events
 }
 
-func (c *Consumer) Close() {
-	close(c.stopper)
+func (c *Consumer) Shutdown() {
+	if c.stopper != nil {
+		close(c.stopper)
+	}
 }
 
-func (c *Consumer) consumePartitions() error {
-	c.stopper = make(chan struct{})
+func (c *Consumer) setupConsumers() []*sarama.Consumer {
 	offsets := c.StartingOffsets
 	count := len(offsets)
-	consumers := make([]ConsumerChannel, count, count)
+	consumers := make([]*sarama.Consumer, count)
 	i := 0
 	for partition, offset := range offsets {
-		if consumer, err := c.Factory(c.Topic, int32(partition), c.Name, int64(offset)); err != nil {
-			return err
+		if consumer, err := c.getConsumer(c.client, c.Topic, int32(partition), c.Name, offset); err != nil {
+			panic(err)
 		} else {
 			consumers[i] = consumer
 		}
 		i++
 	}
-	go c.consume(consumers)
-	return nil
+	return consumers
 }
 
-func (c *Consumer) consume(consumers []ConsumerChannel) {
+func (c *Consumer) consume(consumers []*sarama.Consumer) {
+	c.stopper = make(chan struct{})
 	for _, consumer := range consumers {
 		defer consumer.Close()
 	}
 
-	for {
-		for _, consumer := range consumers {
+	for _, consumer := range consumers {
+		go func() {
 			select {
+			case value := <-consumer.Events():
+				evt := &ConsumerEvent{
+					Error:     value.Err,
+					Message:   value.Value,
+					Offset:    value.Offset,
+					Partition: value.Partition,
+				}
+				c.events <- evt
 			case <-c.stopper:
 				return
-			case event := <-consumer.Events():
-				if event.Err != nil {
-					c.Log.Error("error retrieving message from kafka", event.Err)
-				} else {
-					c.events <- event
-				}
-			default:
-				continue
 			}
-		}
+		}()
 	}
 }
 
-type consumerWrapper struct {
-	Consumer *sarama.Consumer
-	Channel  chan *ConsumerEvent
-	Stopper  chan struct{}
-}
-
-func (cw *consumerWrapper) Open() {
-	cw.Channel = make(chan *ConsumerEvent)
-	cw.Stopper = make(chan struct{})
-	for {
-		select {
-		case value := <-cw.Consumer.Events():
-			//return wrapped event
-			evt := &ConsumerEvent{
-				Err:       value.Err,
-				Message:   value.Value,
-				Offset:    value.Offset,
-				Partition: value.Partition,
-			}
-			cw.Channel <- evt
-		case <-cw.Stopper:
-			return
-		}
+func (c *Consumer) getConsumer(client *sarama.Client, topic string, partition int32, consumerName string, startAtOffset int64) (*sarama.Consumer, error) {
+	config := sarama.NewConsumerConfig()
+	config.EventBufferSize = 1
+	config.OffsetMethod = sarama.OffsetMethodManual
+	config.OffsetValue = startAtOffset
+	consumer, err := sarama.NewConsumer(client, topic, partition, consumerName, config)
+	if err != nil {
+		return nil, err
 	}
-}
-
-func (cw *consumerWrapper) Events() <-chan *ConsumerEvent {
-	return cw.Channel
-}
-
-func (cw *consumerWrapper) Close() error {
-	close(cw.Stopper)
-	return cw.Consumer.Close()
+	return consumer, nil
 }

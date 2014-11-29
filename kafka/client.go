@@ -111,22 +111,6 @@ func (c *Client) SendBytes(bts []byte, topic, key string) error {
 	return c.sendSync(bts, topic, key)
 }
 
-func (c *Client) NewConsumer(name, topic string, startingOffsets map[int]int64) (*Consumer, error) {
-	return NewConsumer(name, topic, startingOffsets, c.consumerFactory)
-}
-
-func (c *Client) consumerFactory(topic string, partition int32, consumerName string, startAtOffset int64) (ConsumerChannel, error) {
-	config := sarama.NewConsumerConfig()
-	config.EventBufferSize = 2
-	config.OffsetMethod = sarama.OffsetMethodManual
-	config.OffsetValue = startAtOffset
-	if consumer, err := sarama.NewConsumer(c.client, topic, partition, consumerName, config); err != nil {
-		return nil, err
-	} else {
-		wrapper := &consumerWrapper{
-			Consumer: consumer,
-		}
-		go wrapper.Open()
-		return wrapper, nil
-	}
+func (c *Client) NewConsumer(name, topic string, startingOffsets map[int]int64) *Consumer {
+	return NewConsumer(c.client, name, topic, startingOffsets)
 }

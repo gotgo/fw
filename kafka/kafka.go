@@ -6,7 +6,7 @@ type Producer interface {
 }
 
 type ConsumerEvent struct {
-	Err       error
+	Error     error
 	Message   []byte
 	Offset    int64
 	Partition int32

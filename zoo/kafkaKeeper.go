@@ -14,6 +14,12 @@ import (
 const connectTimeout = 3 * time.Second
 
 func NewKafkaKeeper(hosts []string, c *TopicConsumer, s *KafkaState) *KafkaKeeper {
+	if c.Root == "" {
+		c.Root = "kafka-topics"
+	}
+	if s.Root == "" {
+		s.Root = "kakfa"
+	}
 	return &KafkaKeeper{
 		acl:      zk.WorldACL(zk.PermAll),
 		hosts:    hosts,
