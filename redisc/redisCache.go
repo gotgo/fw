@@ -160,7 +160,7 @@ func (r *RedisCache) setWithOverwrite(ns, key string, value string, overwrite bo
 			command = "SETNX"
 		}
 		useKey := getKey(ns, key)
-		if _, err = redis.String(conn.Do(command, useKey, value)); err != nil {
+		if _, err = conn.Do(command, useKey, value); err != nil {
 			return err
 		}
 		return nil
