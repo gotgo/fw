@@ -58,10 +58,15 @@ func (z *KafkaKeeper) ensureExists(c *zk.Conn, p string, data string) error {
 		}
 
 		current := path.Join(prev, part)
-		if exists, _, err := c.Exists(current); err != nil {
+		fmt.Printf("cheking for %s", current)
+		exists, _, err := c.Exists(current)
+		if err != nil {
 			return me.Err(err, "error checking if path exists: "+current)
-		} else if !exists {
+		}
+		if !exists {
 			const flags = 0
+			fmt.Printf("creating %s", current)
+			fmt.Println()
 			if _, err := c.Create(current, []byte(data), flags, z.acl); err != nil {
 				return me.Err(err, "error creating path: "+current)
 			}
