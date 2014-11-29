@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gotgo/fw/me"
@@ -49,18 +50,24 @@ func (k *KafkaKeeper) connect() *zk.Conn {
 }
 
 func (z *KafkaKeeper) ensureExists(c *zk.Conn, p string, data string) error {
-	usePath := path.Join("/", p)
-	exists, _, err := c.Exists(usePath)
-	if err != nil {
-		return me.Err(err, "error checking if path exists: "+usePath)
-	}
-	if exists == false {
-		const flags = 0
-		_, err := c.Create(usePath, []byte(data), flags, z.acl)
-		if err != nil {
-			return me.Err(err, "error creating path: "+usePath)
+	parts := strings.Split(p, "/")
+	prev := "/"
+	for _, part := range parts {
+		if len(part) == 0 {
+			continue
+		}
+
+		current := path.Join(prev, part)
+		if exists, _, err := c.Exists(current); err != nil {
+			return me.Err(err, "error checking if path exists: "+current)
+		} else if !exists {
+			const flags = 0
+			if _, err := c.Create(current, []byte(data), flags, z.acl); err != nil {
+				return me.Err(err, "error creating path: "+current)
+			}
 		}
 	}
+
 	return nil
 }
 
