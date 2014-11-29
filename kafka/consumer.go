@@ -6,7 +6,7 @@ import (
 )
 
 type Consumer struct {
-	Name            string
+	ClientName      string
 	StartingOffsets map[int]int64
 	Log             logging.Logger `inject:""`
 	Topic           string
@@ -15,9 +15,9 @@ type Consumer struct {
 	client          *sarama.Client
 }
 
-func NewConsumer(client *sarama.Client, name, topic string, startingOffsets map[int]int64) *Consumer {
+func NewConsumer(client *sarama.Client, clientName, topic string, startingOffsets map[int]int64) *Consumer {
 	consumer := &Consumer{
-		Name:            name,
+		ClientName:      clientName,
 		StartingOffsets: startingOffsets,
 		Topic:           topic,
 		events:          make(chan *ConsumerEvent),
@@ -48,7 +48,7 @@ func (c *Consumer) setupConsumers() []*sarama.Consumer {
 	consumers := make([]*sarama.Consumer, count)
 	i := 0
 	for partition, offset := range offsets {
-		if consumer, err := c.getConsumer(c.client, c.Topic, int32(partition), c.Name, offset); err != nil {
+		if consumer, err := c.getConsumer(c.client, c.Topic, int32(partition), c.ClientName, offset); err != nil {
 			panic(err)
 		} else {
 			consumers[i] = consumer
