@@ -11,9 +11,9 @@ var _ = Describe("TopicConsumer", func() {
 
 	It("should create the correct path", func() {
 		t := &TopicConsumer{
-			Root:  "a",
-			Topic: "mytopic",
-			App:   "myapp",
+			Root:        "a",
+			Topic:       "mytopic",
+			ConsumerApp: "myapp",
 		}
 
 		path := t.PartitionsPath()
