@@ -8,8 +8,8 @@ import (
 )
 
 type KeyValue struct {
-	Key   string
-	Value interface{}
+	Key   string      `json:"key"`
+	Value interface{} `json:"value"`
 }
 
 func SetKeyValue(lm *LogMessage, kv ...*KeyValue) {

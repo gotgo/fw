@@ -60,7 +60,6 @@ func (c *Consumer) setupConsumers() []*sarama.Consumer {
 
 func (c *Consumer) consume(consumers []*sarama.Consumer) {
 	c.stopper = make(chan struct{})
-
 	for _, consumer := range consumers {
 		go func() {
 			local := consumer //closure capture
