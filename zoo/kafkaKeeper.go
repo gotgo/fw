@@ -48,16 +48,17 @@ func (k *KafkaKeeper) connect() *zk.Conn {
 	return conn
 }
 
-func (z *KafkaKeeper) ensureExists(c *zk.Conn, path string, data string) error {
-	exists, _, err := c.Exists(path)
+func (z *KafkaKeeper) ensureExists(c *zk.Conn, p string, data string) error {
+	usePath := path.Join("/", p)
+	exists, _, err := c.Exists(usePath)
 	if err != nil {
-		return me.Err(err, "error checking if path exists: "+path)
+		return me.Err(err, "error checking if path exists: "+usePath)
 	}
 	if exists == false {
 		const flags = 0
-		_, err := c.Create(path, []byte(data), flags, z.acl)
+		_, err := c.Create(usePath, []byte(data), flags, z.acl)
 		if err != nil {
-			return me.Err(err, "error creating path: "+path)
+			return me.Err(err, "error creating path: "+usePath)
 		}
 	}
 	return nil
