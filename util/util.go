@@ -43,9 +43,15 @@ func Invoke(any interface{}, name string, args ...interface{}) {
 
 func NewUid() string {
 	uid := uuid.NewRandom()
-	return base64.StdEncoding.EncodeToString(uid)
+	return Base64Safe(uid)
 }
 
 func NoQuotes(target string) string {
 	return strings.Replace(target, "\"", "", -1)
+}
+
+// Base64Safe - Makes safe for file paths, removes the forward slash '/' and equals '='
+func Base64Safe(bts []byte) string {
+	safe := strings.Replace(base64.StdEncoding.EncodeToString(bts), "/", "-", -1)
+	return strings.Replace(safe, "=", "", -1)
 }
