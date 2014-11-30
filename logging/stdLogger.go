@@ -122,6 +122,7 @@ func (l *StdLogger) WillPanic(m string, err error, kv ...*KeyValue) {
 	} else {
 		logger.Critical(string(bytes))
 	}
+	logger.Flush()
 }
 
 func (l *StdLogger) HadPanic(m string, r interface{}) {
@@ -144,6 +145,7 @@ func (l *StdLogger) HadPanic(m string, r interface{}) {
 	} else {
 		logger.Critical(string(bytes))
 	}
+	logger.Flush()
 }
 
 func (l *StdLogger) Error(m string, e error, kv ...*KeyValue) {
