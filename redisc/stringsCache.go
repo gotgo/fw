@@ -4,6 +4,7 @@ import (
 	"math/rand"
 
 	"github.com/amattn/deeperror"
+	"github.com/garyburd/redigo/redis"
 	"github.com/gotgo/fw/me"
 )
 
@@ -35,15 +36,13 @@ func (r *RedisCache) MSet(kv []*KeyValueString) error {
 }
 
 // Get value from cache by key.
-func (r *RedisCache) Get(key string, instance interface{}) (miss bool, err error) {
-	if bytes, err := r.GetBytes(key); err != nil {
-		return true, err
-	} else if bytes == nil {
-		return true, nil
-	} else if err = r.unmarshal(bytes, &instance); err != nil {
-		return true, err
+func (r *RedisCache) Get(key string) (value string, err error) {
+	if conn, err := r.read(); err != nil {
+		return "", err
+	} else {
+		defer conn.Close()
+		return redis.String(conn.Do("GET", key))
 	}
-	return false, nil
 }
 
 func (r *RedisCache) SetNX(key string, value string) error {

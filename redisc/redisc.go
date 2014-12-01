@@ -17,13 +17,13 @@ type StringsCache interface {
 
 type Set interface {
 	// Add
-	SAdd(key string, items [][]byte) (int, error)
+	SAdd(key string, items []string) (int, error)
 	// Remove
-	SRem(key string, items [][]byte) (int, error)
+	SRem(key string, items []string) (int, error)
 
-	SRandMember(key string, count int) ([][]byte, error)
+	SRandMember(key string, count int) ([]string, error)
 
-	SMembers(listKey string) ([][]byte, error)
+	SMembers(listKey string) ([]string, error)
 }
 
 type SortedSet interface {
@@ -41,6 +41,7 @@ type SortedSet interface {
 type Client interface {
 	StringsCache
 	SortedSet
+	Set
 }
 
 type ScoredMember struct {
@@ -62,6 +63,14 @@ func GetMembers(members []*ScoredMember) []string {
 		keys[i] = m.Member
 	}
 	return keys
+}
+
+func Prefix(namespace string, keys []string) []string {
+	result := make([]string, len(keys))
+	for i, k := range keys {
+		result[i] = namespace + k
+	}
+	return result
 }
 
 type KeyValueString struct {

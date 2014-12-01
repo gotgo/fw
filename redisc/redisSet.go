@@ -3,7 +3,7 @@ package redisc
 import "github.com/garyburd/redigo/redis"
 
 // SAdd returns the number of items added to the set from the items given.
-func (rc *RedisCache) SAdd(key string, items [][]byte) (int, error) {
+func (rc *RedisCache) SAdd(key string, items []string) (int, error) {
 	if conn, err := rc.write(); err != nil {
 		return 0, err
 	} else {
@@ -18,7 +18,7 @@ func (rc *RedisCache) SAdd(key string, items [][]byte) (int, error) {
 }
 
 // SRem returns the number items removed from the set
-func (rc *RedisCache) SRem(key string, items [][]byte) (int, error) {
+func (rc *RedisCache) SRem(key string, items []string) (int, error) {
 	if conn, err := rc.write(); err != nil {
 		return 0, err
 	} else {
@@ -32,21 +32,21 @@ func (rc *RedisCache) SRem(key string, items [][]byte) (int, error) {
 	}
 }
 
-func (rc *RedisCache) SRandMember(key string, count int) ([][]byte, error) {
+func (rc *RedisCache) SRandMember(key string, count int) ([]string, error) {
 	if conn, err := rc.read(); err != nil {
 		return nil, err
 	} else {
 		defer conn.Close()
-		return arrayOfBytes(conn.Do("SRANDMEMBER", key))
+		return arrayOfStrings(conn.Do("SRANDMEMBER", key))
 	}
 }
 
-func (s *RedisCache) SMembers(listKey string) ([][]byte, error) {
+func (s *RedisCache) SMembers(listKey string) ([]string, error) {
 	if conn, err := s.read(); err != nil {
-		return [][]byte{}, err
+		return []string{}, err
 	} else {
 		defer conn.Close()
-		return arrayOfBytes(conn.Do("SMEMBERS", listKey))
+		return arrayOfStrings(conn.Do("SMEMBERS", listKey))
 	}
 }
 

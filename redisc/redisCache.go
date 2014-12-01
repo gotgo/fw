@@ -79,6 +79,16 @@ func (r *RedisCache) SetBytes(key string, bytes []byte) error {
 		return nil
 	}
 }
+func (r *RedisCache) GetObject(key string, instance interface{}) (miss bool, err error) {
+	if bytes, err := r.GetBytes(key); err != nil {
+		return true, err
+	} else if bytes == nil {
+		return true, nil
+	} else if err = r.unmarshal(bytes, &instance); err != nil {
+		return true, err
+	}
+	return false, nil
+}
 
 func (r *RedisCache) Increment(hashName, fieldName string, by int) (int64, error) {
 	if conn, err := r.write(); err != nil {
