@@ -8,7 +8,7 @@ import (
 )
 
 type StringsCache interface {
-	Get(key string, instance interface{}) (miss bool, err error)
+	Get(key string) (value string, err error)
 	Set(key string, value string) error
 	SetNX(key string, value string) error
 	MGet(keys []string) (result []string, err error)
