@@ -48,14 +48,13 @@ func (r *RedisCache) Ping() error {
 	}
 }
 
-func (r *RedisCache) GetBytes(ns, key string) (result []byte, err error) {
+func (r *RedisCache) GetBytes(key string) (result []byte, err error) {
 	if conn, err := r.read(); err != nil {
 		return nil, err
 	} else {
 		defer conn.Close()
 
-		useKey := getKey(ns, key)
-		reply, err := conn.Do("GET", useKey)
+		reply, err := conn.Do("GET", key)
 		if err != nil {
 			return nil, err
 		} else if reply == nil {
@@ -71,96 +70,27 @@ func (r *RedisCache) GetBytes(ns, key string) (result []byte, err error) {
 	}
 }
 
-func (r *RedisCache) MGet(ns string, keys []string) (result []string, err error) {
-	conn, err := r.read()
-	if err != nil {
-		return nil, deeperror.New(rand.Int63(), "Redis connect fail", err)
-	}
-	defer conn.Close()
-
-	useKeys := getKeys(ns, keys)
-	if values, err := arrayOfStrings(conn.Do("MGET", useKeys...)); err != nil {
-		return nil, deeperror.New(rand.Int63(), "MGET fail", err)
-	} else {
-		return values, nil
-	}
-}
-
 type KeyValueString struct {
 	Key   string
 	Value string
 }
 
-func flatten(ns string, kvs []*KeyValueString) []interface{} {
+func flatten(kvs []*KeyValueString) []interface{} {
 	r := make([]interface{}, 2*len(kvs))
 	for i, kv := range kvs {
 		j := i * 2
-		r[j] = getKey(ns, kv.Key)
+		r[j] = kv.Key
 		r[j+1] = kv.Value
 	}
 	return r
 }
 
-func (r *RedisCache) MSet(ns string, kv []*KeyValueString) error {
-	conn, err := r.write()
-	if err != nil {
-		return deeperror.New(rand.Int63(), "Redis connect fail", err)
-	}
-	defer conn.Close()
-
-	if _, err := conn.Do("MSET", flatten(ns, kv)...); err != nil {
-		return deeperror.New(rand.Int63(), "MSET fail", err)
-	}
-	return nil
-}
-
-func (r *RedisCache) SetBytes(ns, key string, bytes []byte) error {
+func (r *RedisCache) SetBytes(key string, bytes []byte) error {
 	if conn, err := r.write(); err != nil {
 		return err
 	} else {
 		defer conn.Close()
-		useKey := getKey(ns, key)
-
-		if _, err = redis.String(conn.Do("SET", useKey, bytes)); err != nil {
-			return err
-		}
-		return nil
-	}
-}
-
-// Get value from cache by key.
-func (r *RedisCache) Get(ns, key string, instance interface{}) (miss bool, err error) {
-	if bytes, err := r.GetBytes(ns, key); err != nil {
-		return true, err
-	} else if bytes == nil {
-		return true, nil
-	} else if err = r.unmarshal(bytes, &instance); err != nil {
-		return true, err
-	}
-	return false, nil
-}
-
-func (r *RedisCache) SetNX(ns, key string, value string) error {
-	return r.setWithOverwrite(ns, key, value, false)
-}
-
-func (r *RedisCache) Set(ns, key string, value string) error {
-	return r.setWithOverwrite(ns, key, value, true)
-}
-
-// Set a value in cache by the given key.
-func (r *RedisCache) setWithOverwrite(ns, key string, value string, overwrite bool) error {
-	if conn, err := r.write(); err != nil {
-		return err
-	} else {
-		defer conn.Close()
-
-		command := "SET"
-		if overwrite == false {
-			command = "SETNX"
-		}
-		useKey := getKey(ns, key)
-		if _, err = conn.Do(command, useKey, value); err != nil {
+		if _, err = redis.String(conn.Do("SET", key, bytes)); err != nil {
 			return err
 		}
 		return nil

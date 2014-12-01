@@ -1,13 +1,11 @@
 package redisc
 
-import "fmt"
-
 type StringsCache interface {
-	Get(ns, key string, instance interface{}) (miss bool, err error)
-	Set(ns, key string, value string) error
-	SetNX(ns, key string, value string) error
-	MGet(ns string, keys []string) (result []string, err error)
-	MSet(ns string, kv []*KeyValueString) error
+	Get(key string, instance interface{}) (miss bool, err error)
+	Set(key string, value string) error
+	SetNX(key string, value string) error
+	MGet(string, keys []string) (result []string, err error)
+	MSet(string, kv []*KeyValueString) error
 }
 
 type Set interface {
@@ -43,15 +41,10 @@ type ScoredMember struct {
 	Member string
 }
 
-func getKey(ns, key string) string {
-	useKey := fmt.Sprintf("%s:%s", ns, key)
-	return useKey
-}
-
-func getKeys(ns string, keys []string) []interface{} {
+func stringsToInterfaces(keys []string) []interface{} {
 	result := make([]interface{}, len(keys))
 	for i, k := range keys {
-		result[i] = getKey(ns, k)
+		result[i] = k
 	}
 	return result
 }
