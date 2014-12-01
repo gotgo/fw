@@ -32,7 +32,7 @@ type SortedSet interface {
 	// ZRevRange returns a subset ordered in descending order
 	ZRevRange(key string, start, stop int) ([]*ScoredMember, error)
 
-	ZIncrBy(key string, amount int, member interface{}) (int, error)
+	ZIncrBy(key string, amount int, member string) (int, error)
 
 	// ZCard returns the Cardinality (i.e. count) of the set
 	ZCard(key string) (int, error)
