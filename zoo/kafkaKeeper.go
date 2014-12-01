@@ -33,7 +33,7 @@ func NewKafkaKeeper(hosts []string, c *TopicConsumer, s *KafkaState) *KafkaKeepe
 }
 
 // KafkaKeeper - Used to manage consumer per topic, per application consuming
-// > /{TopicConsumer.Root}/{topic}/apps/{app}/partitions
+// > /{TopicConsumer.Root}/{topic}/consumers/{consumer-app}/partitions
 //														/{partition}/consumed/{offset}
 type KafkaKeeper struct {
 	acl      []zk.ACL
@@ -114,7 +114,7 @@ func (z *KafkaKeeper) ensureSetup(c *zk.Conn) error {
 		return err
 	}
 
-	//  /kafka-topics/{topic}/apps/{app}/partitions/"
+	//  /kafka-topics/{topic}/consumers/{consumer}/partitions/"
 	if err := z.ensureExists(c, tc.PartitionsPath(), ""); err != nil {
 		return err
 	}
@@ -165,6 +165,7 @@ func (z *KafkaKeeper) SetOffset(partition int32, offset int64) error {
 	}
 	path := path.Join(z.Consumer.PartitionsPath(), fmt.Sprintf("%d", partition), "consumed")
 
+	fmt.Printf("zookeeper path", path)
 	//force version for now
 	_, version, err := z.get(conn, path)
 	if err != nil {

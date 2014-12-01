@@ -62,19 +62,21 @@ func (c *Consumer) consume(consumers []*sarama.Consumer) {
 	c.stopper = make(chan struct{})
 	for _, consumer := range consumers {
 		go func() {
-			local := consumer //closure capture
-			select {
-			case value := <-consumer.Events():
-				evt := &ConsumerEvent{
-					Error:     value.Err,
-					Message:   value.Value,
-					Offset:    value.Offset,
-					Partition: value.Partition,
+			for {
+				local := consumer //closure capture
+				select {
+				case value := <-consumer.Events():
+					evt := &ConsumerEvent{
+						Error:     value.Err,
+						Message:   value.Value,
+						Offset:    value.Offset,
+						Partition: value.Partition,
+					}
+					c.events <- evt
+				case <-c.stopper:
+					local.Close()
+					return
 				}
-				c.events <- evt
-			case <-c.stopper:
-				local.Close()
-				return
 			}
 		}()
 	}

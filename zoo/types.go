@@ -22,10 +22,10 @@ type TopicConsumer struct {
 }
 
 func (tc *TopicConsumer) basePath() string {
-	return path.Join("/", tc.Root, tc.Topic, "apps", tc.ConsumerApp)
+	return path.Join("/", tc.Root, tc.Topic, "consumers", tc.ConsumerApp)
 }
 
 func (tc *TopicConsumer) PartitionsPath() string {
-	// /{root}/{topic}/apps/{app}/partitions
+	// /{root}/{topic}/consumers/{consumer}/partitions
 	return path.Join(tc.basePath(), "partitions")
 }
