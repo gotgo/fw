@@ -64,8 +64,17 @@ func (rc *RedisCache) SetAdd(key string, items []interface{}) (int, error) {
 			toSend[i] = value
 		}
 	}
-
-	return rc.SAdd(key, toSend)
+	if conn, err := rc.write(); err != nil {
+		return 0, err
+	} else {
+		defer conn.Close()
+		if added, err := redis.Int(conn.Do("SADD", key, toSend)); err != nil {
+			rc.Log.Error("Redis SADD fail", err)
+			return 0, err
+		} else {
+			return added, nil
+		}
+	}
 }
 
 func (s *RedisCache) SetRemove(listKey string, member []byte) (int, error) {
