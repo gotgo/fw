@@ -2,14 +2,6 @@ package redisc
 
 import "github.com/garyburd/redigo/redis"
 
-func GetMembers(members []*ScoredMember) []string {
-	keys := make([]string, len(members))
-	for i, m := range members {
-		keys[i] = m.Member
-	}
-	return keys
-}
-
 func (rc *RedisCache) ZAdd(key string, members []*ScoredMember) (int, error) {
 	if len(members) == 0 {
 		return 0, nil

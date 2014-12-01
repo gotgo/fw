@@ -21,7 +21,7 @@ func (r *RedisCache) MGet(keys []string) (result []string, err error) {
 		return values, nil
 	}
 }
-func (r *RedisCache) MSet(ns string, kv []*KeyValueString) error {
+func (r *RedisCache) MSet(kv []*KeyValueString) error {
 	conn, err := r.write()
 	if err != nil {
 		return me.Err(err, "Redis connect fail")
@@ -35,7 +35,7 @@ func (r *RedisCache) MSet(ns string, kv []*KeyValueString) error {
 }
 
 // Get value from cache by key.
-func (r *RedisCache) Get(ns, key string, instance interface{}) (miss bool, err error) {
+func (r *RedisCache) Get(key string, instance interface{}) (miss bool, err error) {
 	if bytes, err := r.GetBytes(key); err != nil {
 		return true, err
 	} else if bytes == nil {
