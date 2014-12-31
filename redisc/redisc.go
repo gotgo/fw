@@ -31,6 +31,7 @@ type SortedSet interface {
 
 	// ZRevRange returns a subset ordered in descending order
 	ZRevRange(key string, start, stop int) ([]*ScoredMember, error)
+	ZRevRangeByScore(key string, max, min int) ([]*ScoredMember, error)
 
 	ZIncrBy(key string, amount int, member string) (int, error)
 

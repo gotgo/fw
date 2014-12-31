@@ -49,6 +49,11 @@ func (m *RedisSortedSetMock) ZRevRange(key string, start, stop int) ([]*ScoredMe
 	return []*ScoredMember{}, nil
 }
 
+func (rc *RedisSortedSetMock) ZRevRangeByScore(key string, max, min int) ([]*ScoredMember, error) {
+	//TODO
+	//m.ZRevRangeArgs = append(m.ZRevRangeArgs, &ZRevRangeArgs{key, start, stop})
+	return []*ScoredMember{}, nil
+}
 func (m *RedisSortedSetMock) ZIncrBy(key string, amount int, member []byte) (int, error) {
 	m.ZIncrByArgs = append(m.ZIncrByArgs, &ZIncrByArgs{key, amount, member})
 	return 1, nil
