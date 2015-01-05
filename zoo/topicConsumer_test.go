@@ -17,6 +17,6 @@ var _ = Describe("TopicConsumer", func() {
 		}
 
 		path := t.PartitionsPath()
-		Expect(path).To(Equal("/a/mytopic/apps/myapp/partitions"))
+		Expect(path).To(Equal("/a/mytopic/consumers/myapp/partitions"))
 	})
 })
