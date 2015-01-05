@@ -1,8 +1,13 @@
 package redisc
 
-import "github.com/garyburd/redigo/redis"
+import (
+	"math"
+	"strconv"
 
-func (rc *RedisCache) ZAdd(key string, members []*ScoredMember) (int, error) {
+	"github.com/garyburd/redigo/redis"
+)
+
+func (rc *RedisCache) ZAdd(key string, members ...*ScoredMember) (int, error) {
 	if len(members) == 0 {
 		return 0, nil
 	}
@@ -47,7 +52,15 @@ func (rc *RedisCache) ZRevRangeByScore(key string, max, min int) ([]*ScoredMembe
 		return nil, err
 	} else {
 		defer conn.Close()
-		return rc.scoredMembers(conn.Do("ZREVRANGEBYSCORE", key, max, min, "WITHSCORES"))
+		maxVal := strconv.Itoa(max)
+		if max == math.MaxInt32 {
+			maxVal = "+inf"
+		}
+		minVal := strconv.Itoa(min)
+		if min == math.MinInt32 {
+			minVal = "-inf"
+		}
+		return rc.scoredMembers(conn.Do("ZREVRANGEBYSCORE", key, maxVal, minVal, "WITHSCORES"))
 	}
 }
 func (rc *RedisCache) ZIncrBy(key string, amount int, member string) (int, error) {

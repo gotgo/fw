@@ -27,7 +27,7 @@ type Set interface {
 }
 
 type SortedSet interface {
-	ZAdd(key string, members []*ScoredMember) (int, error)
+	ZAdd(key string, members ...*ScoredMember) (int, error)
 
 	// ZRevRange returns a subset ordered in descending order
 	ZRevRange(key string, start, stop int) ([]*ScoredMember, error)
