@@ -149,7 +149,10 @@ func (l *StdLogger) HadPanic(m string, r interface{}) {
 }
 
 func (l *StdLogger) Error(m string, e error, kv ...*KeyValue) {
-	msg := e.Error()
+	msg := "unknown error"
+	if e != nil {
+		msg = e.Error()
+	}
 	lm := &LogMessage{
 		Message: m,
 		Error:   msg,

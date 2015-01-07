@@ -1,6 +1,8 @@
 package kafka
 
 import (
+	"sync"
+
 	"github.com/Shopify/sarama"
 	"github.com/gotgo/fw/logging"
 )
@@ -28,8 +30,8 @@ func NewConsumer(client *sarama.Client, clientName, topic string, startingOffset
 
 // Run - Nonblocking
 func (c *Consumer) Run() {
-	consumers := c.setupConsumers()
-	c.consume(consumers)
+	consumers := c.getConsumerChannels()
+	go c.consume(consumers)
 }
 
 func (c *Consumer) Events() <-chan *ConsumerEvent {
@@ -42,44 +44,67 @@ func (c *Consumer) Shutdown() {
 	}
 }
 
-func (c *Consumer) setupConsumers() []*sarama.Consumer {
+func (c *Consumer) getConsumerChannels() []<-chan *sarama.ConsumerEvent {
 	offsets := c.StartingOffsets
-	count := len(offsets)
-	consumers := make([]*sarama.Consumer, count)
+	consumers := make([]<-chan *sarama.ConsumerEvent, len(offsets))
 	i := 0
 	for partition, offset := range offsets {
-		if consumer, err := c.getConsumer(c.client, c.Topic, int32(partition), c.ClientName, offset); err != nil {
+		consumer, err := c.getConsumer(c.client, c.Topic, int32(partition), c.ClientName, offset)
+
+		if err != nil {
 			panic(err)
-		} else {
-			consumers[i] = consumer
 		}
+
+		consumers[i] = consumer.Events()
 		i++
 	}
 	return consumers
 }
 
-func (c *Consumer) consume(consumers []*sarama.Consumer) {
-	c.stopper = make(chan struct{})
-	for _, consumer := range consumers {
-		go func() {
-			for {
-				local := consumer //closure capture
-				select {
-				case value := <-consumer.Events():
-					evt := &ConsumerEvent{
-						Error:     value.Err,
-						Message:   value.Value,
-						Offset:    value.Offset,
-						Partition: value.Partition,
-					}
-					c.events <- evt
-				case <-c.stopper:
-					local.Close()
-					return
-				}
-			}
-		}()
+func (c *Consumer) consume(consumers []<-chan *sarama.ConsumerEvent) {
+	stopper := make(chan struct{})
+	single := merge(stopper, consumers...)
+	c.stopper = stopper
+
+	for value := range single {
+		evt := &ConsumerEvent{
+			Error:     value.Err,
+			Message:   value.Value,
+			Offset:    value.Offset,
+			Partition: value.Partition,
+		}
+		c.events <- evt
 	}
+}
+
+func merge(done <-chan struct{}, cs ...<-chan *sarama.ConsumerEvent) <-chan *sarama.ConsumerEvent {
+	var wg sync.WaitGroup
+	out := make(chan *sarama.ConsumerEvent)
+
+	// Start an output goroutine for each input channel in cs.  output
+	// copies values from c to out until c is closed, then calls wg.Done.
+	output := func(c <-chan *sarama.ConsumerEvent) {
+		defer wg.Done()
+		for e := range c {
+			select {
+			case out <- e:
+			case <-done:
+				return
+			}
+		}
+	}
+	wg.Add(len(cs))
+	for _, c := range cs {
+		go output(c)
+	}
+
+	// Start a goroutine to close out once all the output goroutines are
+	// done.  This must start after the wg.Add call.
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+	return out
 }
 
 func (c *Consumer) getConsumer(client *sarama.Client, topic string, partition int32, consumerName string, startAtOffset int64) (*sarama.Consumer, error) {
@@ -87,9 +112,5 @@ func (c *Consumer) getConsumer(client *sarama.Client, topic string, partition in
 	config.EventBufferSize = 1
 	config.OffsetMethod = sarama.OffsetMethodManual
 	config.OffsetValue = startAtOffset
-	consumer, err := sarama.NewConsumer(client, topic, partition, consumerName, config)
-	if err != nil {
-		return nil, err
-	}
-	return consumer, nil
+	return sarama.NewConsumer(client, topic, partition, consumerName, config)
 }
