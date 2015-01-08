@@ -1,6 +1,9 @@
 package redisc
 
-import "github.com/garyburd/redigo/redis"
+import (
+	"github.com/garyburd/redigo/redis"
+	"github.com/gotgo/fw/me"
+)
 
 // SAdd returns the number of items added to the set from the items given.
 func (rc *RedisCache) SAdd(key string, items ...string) (int, error) {
@@ -8,14 +11,21 @@ func (rc *RedisCache) SAdd(key string, items ...string) (int, error) {
 		return 0, err
 	} else {
 		defer conn.Close()
-		data := append([]string{key}, items...)
-		if added, err := redis.Int(conn.Do("SADD", data)); err != nil {
-			rc.Log.Error("Redis SADD fail", err)
-			return 0, err
+		if added, err := redis.Int(conn.Do("SADD", join(key, items))); err != nil {
+			return 0, me.Err(err, "redis SADD fail")
 		} else {
 			return added, nil
 		}
 	}
+}
+
+func join(key string, items []string) []interface{} {
+	result := make([]interface{}, len(items)+1)
+	result[0] = key
+	for i, item := range items {
+		result[i+1] = item
+	}
+	return result
 }
 
 // SRem returns the number items removed from the set
@@ -24,10 +34,8 @@ func (rc *RedisCache) SRem(key string, items ...string) (int, error) {
 		return 0, err
 	} else {
 		defer conn.Close()
-		data := append([]string{key}, items...)
-		if removed, err := redis.Int(conn.Do("SREM", data)); err != nil {
-			rc.Log.Error("Redis SREM fail", err)
-			return 0, err
+		if removed, err := redis.Int(conn.Do("SREM", join(key, items))); err != nil {
+			return 0, me.Err(err, "Redis SREM fail")
 		} else {
 			return removed, nil
 		}
