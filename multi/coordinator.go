@@ -89,7 +89,7 @@ func (d *Coordinator) from(c *Coordinator) {
 	d.noMore()
 }
 
-func (c *Coordinator) process(f *Flow, done sync.WaitGroup) {
+func (c *Coordinator) process(f *Flow, done *sync.WaitGroup) {
 	currentStep := f.Steps[c.name]
 	if currentStep == nil {
 		panic(me.NewErr("unknown step " + c.name))
@@ -111,7 +111,7 @@ func (c *Coordinator) feedTodo() {
 	var done sync.WaitGroup
 	for f := range c.todo {
 		done.Add(1)
-		go c.process(f, done) //synchronous
+		go c.process(f, &done)
 	}
 	done.Wait()
 	c.closeUp()
