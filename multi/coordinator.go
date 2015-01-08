@@ -1,6 +1,7 @@
 package multi
 
 import (
+	"sync"
 	"sync/atomic"
 
 	"github.com/gotgo/fw/me"
@@ -56,7 +57,7 @@ func (d *Coordinator) Run() {
 	//	go d.handleResults()
 }
 
-func (c *Coordinator) NoMore() {
+func (c *Coordinator) noMore() {
 	close(c.todo)
 	//	c.stop <- nil
 }
@@ -73,7 +74,7 @@ func (d *Coordinator) Act(flows []*Flow) {
 		atomic.AddInt32(d.queued, 1)
 		d.todo <- f
 	}
-	d.NoMore()
+	d.noMore()
 }
 
 func (d *Coordinator) From(c *Coordinator) {
@@ -85,7 +86,7 @@ func (d *Coordinator) from(c *Coordinator) {
 		atomic.AddInt32(d.queued, 1)
 		d.todo <- f
 	}
-	d.NoMore()
+	d.noMore()
 }
 
 func (c *Coordinator) process(f *Flow) {
@@ -95,6 +96,8 @@ func (c *Coordinator) process(f *Flow) {
 	}
 	//TODO: this is currently expecting syncronous behavior
 	//despite the pattern
+	var done sync.WaitGroup
+	done.Add(1)
 	currentStep.Action.Action(f.Data, func() {
 		if currentStep.Action.Error() != nil {
 			c.Fail <- f
@@ -102,8 +105,10 @@ func (c *Coordinator) process(f *Flow) {
 			c.Success <- f
 		}
 		atomic.AddInt32(c.queued, -1)
+		done.Done()
 		//		<-c.rateLimiter //remove one, any one, to allow more
 	})
+	done.Wait()
 	//	c.rateLimiter <- nil //rate limited, will block at limit
 }
 
