@@ -1,7 +1,6 @@
 package multi
 
 import (
-	"fmt"
 	"sync/atomic"
 
 	"github.com/gotgo/fw/me"
@@ -53,13 +52,13 @@ func (d *Coordinator) Finished() <-chan struct{} {
 
 func (d *Coordinator) Run() {
 	go d.feedTodo()
-	go d.feedRetry()
-	go d.handleResults()
+	//go d.feedRetry()
+	//	go d.handleResults()
 }
 
 func (c *Coordinator) NoMore() {
 	close(c.todo)
-	c.stop <- nil
+	//	c.stop <- nil
 }
 
 func (c *Coordinator) isComplete() bool {
@@ -74,6 +73,7 @@ func (d *Coordinator) Act(flows []*Flow) {
 		atomic.AddInt32(d.queued, 1)
 		d.todo <- f
 	}
+	d.NoMore()
 }
 
 func (d *Coordinator) From(c *Coordinator) {
@@ -89,19 +89,29 @@ func (d *Coordinator) from(c *Coordinator) {
 }
 
 func (c *Coordinator) process(f *Flow) {
-	local := f
 	currentStep := f.Steps[c.name]
 	if currentStep == nil {
 		panic(me.NewErr("unknown step " + c.name))
 	}
-	go currentStep.Action.Action(local.Data, func() { c.completed <- local })
-	c.rateLimiter <- nil //rate limited, will block at limit
+	//TODO: this is currently expecting syncronous behavior
+	//despite the pattern
+	currentStep.Action.Action(f.Data, func() {
+		if currentStep.Action.Error() != nil {
+			c.Fail <- f
+		} else {
+			c.Success <- f
+		}
+		atomic.AddInt32(c.queued, -1)
+		//		<-c.rateLimiter //remove one, any one, to allow more
+	})
+	//	c.rateLimiter <- nil //rate limited, will block at limit
 }
 
 func (c *Coordinator) feedTodo() {
 	for f := range c.todo {
-		c.process(f)
+		c.process(f) //synchronous
 	}
+	c.closeUp()
 }
 
 func (c *Coordinator) feedRetry() {
@@ -110,42 +120,46 @@ func (c *Coordinator) feedRetry() {
 	}
 }
 
-func (d *Coordinator) handleResults() {
-	shutdown := false
-	for {
-		select {
-		case f := <-d.completed:
-			<-d.rateLimiter //remove one, any one, to allow more
-			s := f.Steps[d.name]
-			s.Attempts++
-			flow := f //local
+//func (d *Coordinator) handleResults() {
+//	shutdown := false
+//	for {
+//		select {
+//		case f := <-d.completed:
+//			<-d.rateLimiter //remove one, any one, to allow more
+//			s := f.Steps[d.name]
+//			s.Attempts++
+//			flow := f //local
+//
+//			if s.Action.Error() != nil {
+//				//if s.Attempts > d.retries {
+//				d.Fail <- flow
+//				atomic.AddInt32(d.queued, -1)
+//				//} else {
+//				//	d.retry <- flow
+//				//	fmt.Println("retry")
+//				//}
+//			} else {
+//				d.Success <- flow
+//				atomic.AddInt32(d.queued, -1)
+//			}
+//
+//			if shutdown && d.isComplete() {
+//				close(d.stop)
+//			}
+//		case <-d.stop:
+//			if d.isComplete() {
+//				d.closeUp()
+//				return
+//			} else {
+//				shutdown = true
+//			}
+//		}
+//	}
+//}
 
-			if s.Action.Error() != nil {
-				if s.Attempts > d.retries {
-					d.Fail <- flow
-					atomic.AddInt32(d.queued, -1)
-				} else {
-					d.retry <- flow
-					fmt.Println("retry")
-				}
-			} else {
-				d.Success <- flow
-				atomic.AddInt32(d.queued, -1)
-			}
-
-			if shutdown && d.isComplete() {
-				close(d.stop)
-			}
-		case <-d.stop:
-			if d.isComplete() {
-				close(d.finished)
-				close(d.Success)
-				close(d.Fail)
-				close(d.retry)
-				return
-			} else {
-				shutdown = true
-			}
-		}
-	}
+func (c *Coordinator) closeUp() {
+	close(c.finished)
+	close(c.Success)
+	close(c.Fail)
+	close(c.retry)
 }

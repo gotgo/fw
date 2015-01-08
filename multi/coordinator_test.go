@@ -35,7 +35,7 @@ var _ = Describe("Coordinator", func() {
 		flow.NewStep("pass", successAction, nil)
 
 		dl.Act([]*Flow{flow})
-		dl.NoMore()
+		//dl.NoMore()
 
 		<-dl.Finished()
 		Expect(successAction.ActionCount).To(Equal(1))
@@ -46,7 +46,7 @@ var _ = Describe("Coordinator", func() {
 
 	It("should error", func() {
 		concurrency := 2
-		retries := 1
+		retries := 0
 		max := 1
 		dl := NewCoordinator("fail", concurrency, retries, max)
 		dl.Run()
@@ -57,12 +57,12 @@ var _ = Describe("Coordinator", func() {
 		flow.NewStep("fail", errorAction, nil)
 
 		dl.Act([]*Flow{flow})
-		dl.NoMore()
+		//dl.NoMore()
 
 		<-dl.Finished()
 
 		// 1 execution and 1 retry
-		Expect(errorAction.ActionCount).To(Equal(2))
+		Expect(errorAction.ActionCount).To(Equal(1))
 		e := <-dl.Fail
 		Expect(e).ToNot(BeNil())
 	})
