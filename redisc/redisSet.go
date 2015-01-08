@@ -3,12 +3,13 @@ package redisc
 import "github.com/garyburd/redigo/redis"
 
 // SAdd returns the number of items added to the set from the items given.
-func (rc *RedisCache) SAdd(key string, items []string) (int, error) {
+func (rc *RedisCache) SAdd(key string, items ...string) (int, error) {
 	if conn, err := rc.write(); err != nil {
 		return 0, err
 	} else {
 		defer conn.Close()
-		if added, err := redis.Int(conn.Do("SADD", key, items)); err != nil {
+		data := append([]string{key}, items...)
+		if added, err := redis.Int(conn.Do("SADD", data)); err != nil {
 			rc.Log.Error("Redis SADD fail", err)
 			return 0, err
 		} else {
@@ -23,7 +24,8 @@ func (rc *RedisCache) SRem(key string, items []string) (int, error) {
 		return 0, err
 	} else {
 		defer conn.Close()
-		if removed, err := redis.Int(conn.Do("SREM", key, items)); err != nil {
+		data := append([]string{key}, items...)
+		if removed, err := redis.Int(conn.Do("SREM", data)); err != nil {
 			rc.Log.Error("Redis SREM fail", err)
 			return 0, err
 		} else {
