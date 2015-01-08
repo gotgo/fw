@@ -67,9 +67,9 @@ func (c *Coordinator) isComplete() bool {
 }
 
 func (d *Coordinator) Act(flows []*Flow) {
-	if len(flows) > d.maxSize {
-		panic("Act() the lengths of the flows can not be greater than the max")
-	}
+	//	if len(flows) > d.maxSize {
+	//		panic("Act() the lengths of the flows can not be greater than the max")
+	//	}
 	for _, f := range flows {
 		atomic.AddInt32(d.queued, 1)
 		d.todo <- f
