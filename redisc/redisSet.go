@@ -11,7 +11,7 @@ func (rc *RedisCache) SAdd(key string, items ...string) (int, error) {
 		return 0, err
 	} else {
 		defer conn.Close()
-		if added, err := redis.Int(conn.Do("SADD", join(key, items))); err != nil {
+		if added, err := redis.Int(conn.Do("SADD", join(key, items)...)); err != nil {
 			return 0, me.Err(err, "redis SADD fail")
 		} else {
 			return added, nil
@@ -34,7 +34,7 @@ func (rc *RedisCache) SRem(key string, items ...string) (int, error) {
 		return 0, err
 	} else {
 		defer conn.Close()
-		if removed, err := redis.Int(conn.Do("SREM", join(key, items))); err != nil {
+		if removed, err := redis.Int(conn.Do("SREM", join(key, items)...)); err != nil {
 			return 0, me.Err(err, "Redis SREM fail")
 		} else {
 			return removed, nil
