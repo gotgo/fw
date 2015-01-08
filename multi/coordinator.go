@@ -89,15 +89,11 @@ func (d *Coordinator) from(c *Coordinator) {
 	d.noMore()
 }
 
-func (c *Coordinator) process(f *Flow) {
+func (c *Coordinator) process(f *Flow, done sync.WaitGroup) {
 	currentStep := f.Steps[c.name]
 	if currentStep == nil {
 		panic(me.NewErr("unknown step " + c.name))
 	}
-	//TODO: this is currently expecting syncronous behavior
-	//despite the pattern
-	var done sync.WaitGroup
-	done.Add(1)
 	currentStep.Action.Action(f.Data, func() {
 		if currentStep.Action.Error() != nil {
 			c.Fail <- f
@@ -105,17 +101,19 @@ func (c *Coordinator) process(f *Flow) {
 			c.Success <- f
 		}
 		atomic.AddInt32(c.queued, -1)
-		done.Done()
 		//		<-c.rateLimiter //remove one, any one, to allow more
+		done.Done()
 	})
-	done.Wait()
 	//	c.rateLimiter <- nil //rate limited, will block at limit
 }
 
 func (c *Coordinator) feedTodo() {
+	var done sync.WaitGroup
 	for f := range c.todo {
-		c.process(f) //synchronous
+		done.Add(1)
+		go c.process(f, done) //synchronous
 	}
+	done.Wait()
 	c.closeUp()
 }
 
