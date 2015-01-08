@@ -17,9 +17,9 @@ type StringsCache interface {
 
 type Set interface {
 	// Add
-	SAdd(key string, items []string) (int, error)
+	SAdd(key string, items ...string) (int, error)
 	// Remove
-	SRem(key string, items []string) (int, error)
+	SRem(key string, items ...string) (int, error)
 
 	SRandMember(key string, count int) ([]string, error)
 

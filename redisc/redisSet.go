@@ -19,7 +19,7 @@ func (rc *RedisCache) SAdd(key string, items ...string) (int, error) {
 }
 
 // SRem returns the number items removed from the set
-func (rc *RedisCache) SRem(key string, items []string) (int, error) {
+func (rc *RedisCache) SRem(key string, items ...string) (int, error) {
 	if conn, err := rc.write(); err != nil {
 		return 0, err
 	} else {
