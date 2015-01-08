@@ -11,31 +11,31 @@ import (
 func NewCoordinator(name string, concurrency int, retries int, maxItems int) *Coordinator {
 	size := maxItems
 	d := &Coordinator{
-		todo:        make(chan *Flow, size),
-		retry:       make(chan *Flow, size),
-		rateLimiter: make(chan interface{}, concurrency),
-		completed:   make(chan *Flow, size),
-		stop:        make(chan interface{}, size),
-		finished:    make(chan struct{}, size),
-		Success:     make(chan *Flow, size),
-		Fail:        make(chan *Flow, size),
-		queued:      new(int32),
-		name:        name,
-		retries:     retries,
-		maxSize:     size,
+		todo: make(chan *Flow, size),
+		//	retry: make(chan *Flow, size),
+		//rateLimiter: make(chan interface{}, concurrency),
+		//		completed: make(chan *Flow, size),
+		//stop:     make(chan interface{}, size),
+		finished: make(chan struct{}, size),
+		Success:  make(chan *Flow, size),
+		Fail:     make(chan *Flow, size),
+		queued:   new(int32),
+		name:     name,
+		retries:  retries,
+		maxSize:  size,
 	}
 	return d
 }
 
 // Coordinator - concurrent actions
 type Coordinator struct {
-	todo        chan *Flow
-	rateLimiter chan interface{}
-	completed   chan *Flow
-	retry       chan *Flow
+	todo chan *Flow
+	//rateLimiter chan interface{}
+	//	completed chan *Flow
+	//retry     chan *Flow
 
 	finished chan struct{}
-	stop     chan interface{}
+	//stop     chan interface{}
 
 	Success chan *Flow
 	Fail    chan *Flow
@@ -119,11 +119,11 @@ func (c *Coordinator) feedTodo() {
 	c.closeUp()
 }
 
-func (c *Coordinator) feedRetry() {
-	for f := range c.retry {
-		c.process(f)
-	}
-}
+//func (c *Coordinator) feedRetry() {
+//	for f := range c.retry {
+//		c.process(f)
+//	}
+//}
 
 //func (d *Coordinator) handleResults() {
 //	shutdown := false
@@ -166,5 +166,5 @@ func (c *Coordinator) closeUp() {
 	close(c.finished)
 	close(c.Success)
 	close(c.Fail)
-	close(c.retry)
+	//	close(c.retry)
 }
