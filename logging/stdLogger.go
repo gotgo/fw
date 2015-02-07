@@ -185,8 +185,9 @@ func (l *StdLogger) Warn(m string, kv ...*KeyValue) {
 
 // Infom captures a simple message. If you are logging key value pairs,
 // use Info(m interface{})
-func (l *StdLogger) Inform(m string) {
+func (l *StdLogger) Inform(m string, kv ...*KeyValue) {
 	lm := &LogMessage{Message: m, Kind: "inform"}
+	SetKeyValue(lm, kv...)
 	if bytes, err := json.Marshal(lm); err != nil {
 		l.MarshalFail("Could not log event because info message marshal fail", lm, err)
 	} else {

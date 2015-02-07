@@ -25,7 +25,7 @@ func (l *NoOpLogger) WillPanic(m string, err error, kv ...*KeyValue) {}
 func (l *NoOpLogger) Error(m string, err error, kv ...*KeyValue)     {}
 func (l *NoOpLogger) Warn(m string, kv ...*KeyValue)                 {}
 
-func (l *NoOpLogger) Inform(m string)                 {}
-func (l *NoOpLogger) Event(m string, kv ...*KeyValue) {}
+func (l *NoOpLogger) Inform(m string, kv ...*KeyValue) {}
+func (l *NoOpLogger) Event(m string, kv ...*KeyValue)  {}
 
 func (l *NoOpLogger) Debug(m string, kv ...*KeyValue) {}

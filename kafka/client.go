@@ -72,13 +72,15 @@ func (c *Client) Close() {
 }
 
 func (c *Client) sendSync(bts []byte, topic, key string) error {
-	partitioner := func() sarama.Partitioner { return sarama.NewHashPartitioner() }
-	producer, err := sarama.NewSimpleProducer(c.client, topic, partitioner)
+	config := sarama.NewProducerConfig()
+	config.AckSuccesses = true
+	config.Partitioner = func() sarama.Partitioner { return sarama.NewHashPartitioner() }
+	producer, err := sarama.NewSimpleProducer(c.client, config)
 	if err != nil {
 		return me.Err(err, "failed to create kafka simple producer")
 	}
 	defer producer.Close()
-	if err = producer.SendMessage(sarama.StringEncoder(key), sarama.ByteEncoder(bts)); err != nil {
+	if err = producer.SendMessage(topic, sarama.StringEncoder(key), sarama.ByteEncoder(bts)); err != nil {
 		return me.Err(err, "kafka send message fail")
 	}
 	return nil

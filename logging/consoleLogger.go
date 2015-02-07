@@ -72,8 +72,17 @@ func (l *ConsoleLogger) Warn(m string, kv ...*KeyValue) {
 
 // Infom captures a simple message. If you are logging key value pairs,
 // use Info(m interface{})
-func (l *ConsoleLogger) Inform(m string) {
-	fmt.Println(&LogMessage{Message: m})
+func (l *ConsoleLogger) Inform(m string, kv ...*KeyValue) {
+	lm := &LogMessage{
+		Message: m,
+	}
+	SetKeyValue(lm, kv...)
+	if bytes, err := json.Marshal(lm); err != nil {
+		l.MarshalFail("failed to warn", lm, err)
+		return
+	} else {
+		fmt.Println(string(bytes))
+	}
 }
 
 func (l *ConsoleLogger) Event(m string, kv ...*KeyValue) {

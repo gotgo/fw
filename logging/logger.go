@@ -25,7 +25,7 @@ type LoggerBasic interface {
 
 	// Inform captures a simple message.
 	// Inform("Server is starting...")
-	Inform(m string)
+	Inform(m string, kv ...*KeyValue)
 
 	Event(m string, kv ...*KeyValue)
 	Debug(m string, kv ...*KeyValue)

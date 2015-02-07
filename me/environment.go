@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+
+	"github.com/gotgo/fw/logging"
 )
 
 var App *Program
@@ -44,6 +46,7 @@ type ProgramValues struct {
 type Program struct {
 	conf   *AppConf
 	values *ProgramValues
+	log    logging.Logger
 }
 
 func (p *Program) Environment() string {
