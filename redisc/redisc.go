@@ -37,6 +37,9 @@ type SortedSet interface {
 
 	// ZCard returns the Cardinality (i.e. count) of the set
 	ZCard(key string) (int, error)
+
+	// ZSScore if the member or key does not exists return a nil int with no error
+	ZScore(key, member string) (*int, error)
 }
 
 type Client interface {

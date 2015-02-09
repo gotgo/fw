@@ -46,6 +46,21 @@ func (rc *RedisCache) ZRevRange(key string, start, stop int) ([]*ScoredMember, e
 		return rc.scoredMembers(conn.Do("ZREVRANGE", key, start, stop, "WITHSCORES"))
 	}
 }
+func (rc *RedisCache) ZScore(key, member string) (*int, error) {
+	if conn, err := rc.read(); err != nil {
+		return nil, err
+	} else {
+		defer conn.Close()
+		v, err := redis.Int(conn.Do("ZSCORE", key, member))
+		if err == redis.ErrNil {
+			return nil, nil
+		} else if err != nil {
+			return nil, err
+		} else {
+			return &v, err
+		}
+	}
+}
 
 func (rc *RedisCache) ZRevRangeByScore(key string, max, min int) ([]*ScoredMember, error) {
 	if conn, err := rc.read(); err != nil {
