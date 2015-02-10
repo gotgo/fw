@@ -7,7 +7,9 @@ import (
 	"github.com/cihub/seelog"
 )
 
-type KV KeyValue
+func KV(key, value string) *KeyValue {
+	return &KeyValue{key, value}
+}
 
 type KeyValue struct {
 	Key   string      `json:"key"`
