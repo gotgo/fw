@@ -7,6 +7,8 @@ import (
 	"github.com/cihub/seelog"
 )
 
+type KV KeyValue
+
 type KeyValue struct {
 	Key   string      `json:"key"`
 	Value interface{} `json:"value"`
