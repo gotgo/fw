@@ -42,14 +42,14 @@ func (l *ConsoleLogger) UnmarshalFail(m string, data []byte, err error) {
 	fmt.Println(lm)
 }
 
-func (l *ConsoleLogger) Timeout(m string, err error, kv ...*KeyValue) {
+func (l *ConsoleLogger) Timeout(m string, err error, kv ...*KV) {
 	lm := &LogMessage{
 		Message: m,
 		Error:   err.Error(),
 	}
 	fmt.Println(lm)
 }
-func (l *ConsoleLogger) ConnectFail(m string, err error, kv ...*KeyValue) {
+func (l *ConsoleLogger) ConnectFail(m string, err error, kv ...*KV) {
 	lm := &LogMessage{
 		Message: m,
 		Error:   err.Error(),
@@ -57,7 +57,7 @@ func (l *ConsoleLogger) ConnectFail(m string, err error, kv ...*KeyValue) {
 	fmt.Println(lm)
 }
 
-func (l *ConsoleLogger) Warn(m string, kv ...*KeyValue) {
+func (l *ConsoleLogger) Warn(m string, kv ...*KV) {
 	lm := &LogMessage{
 		Message: m,
 	}
@@ -72,7 +72,7 @@ func (l *ConsoleLogger) Warn(m string, kv ...*KeyValue) {
 
 // Infom captures a simple message. If you are logging key value pairs,
 // use Info(m interface{})
-func (l *ConsoleLogger) Inform(m string, kv ...*KeyValue) {
+func (l *ConsoleLogger) Inform(m string, kv ...*KV) {
 	lm := &LogMessage{
 		Message: m,
 	}
@@ -85,7 +85,7 @@ func (l *ConsoleLogger) Inform(m string, kv ...*KeyValue) {
 	}
 }
 
-func (l *ConsoleLogger) Event(m string, kv ...*KeyValue) {
+func (l *ConsoleLogger) Event(m string, kv ...*KV) {
 	lm := &LogMessage{
 		Message: m,
 	}
@@ -93,7 +93,7 @@ func (l *ConsoleLogger) Event(m string, kv ...*KeyValue) {
 	fmt.Println(lm)
 }
 
-func (l *ConsoleLogger) Error(m string, err error, kv ...*KeyValue) {
+func (l *ConsoleLogger) Error(m string, err error, kv ...*KV) {
 	lm := &LogMessage{
 		Message: m,
 		Error:   err.Error(),
@@ -125,7 +125,7 @@ func (l *ConsoleLogger) HadPanic(m string, r interface{}) {
 	}
 }
 
-func (l *ConsoleLogger) WillPanic(m string, err error, kv ...*KeyValue) {
+func (l *ConsoleLogger) WillPanic(m string, err error, kv ...*KV) {
 	lm := &LogMessage{
 		Message: m,
 		Error:   err.Error(),
@@ -138,7 +138,7 @@ func (l *ConsoleLogger) WillPanic(m string, err error, kv ...*KeyValue) {
 	}
 }
 
-func (l *ConsoleLogger) Debug(m string, kv ...*KeyValue) {
+func (l *ConsoleLogger) Debug(m string, kv ...*KV) {
 	lm := &LogMessage{
 		Message: m,
 	}

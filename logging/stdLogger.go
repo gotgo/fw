@@ -77,7 +77,7 @@ func (l *StdLogger) UnmarshalFail(m string, data []byte, err error) {
 	logger.Error(string(bytes))
 }
 
-func (l *StdLogger) Timeout(m string, err error, kv ...*KeyValue) {
+func (l *StdLogger) Timeout(m string, err error, kv ...*KV) {
 	msg := err.Error()
 	lm := &LogMessage{
 		Message: m,
@@ -93,7 +93,7 @@ func (l *StdLogger) Timeout(m string, err error, kv ...*KeyValue) {
 	logger.Warn(string(bytes))
 }
 
-func (l *StdLogger) ConnectFail(m string, err error, kv ...*KeyValue) {
+func (l *StdLogger) ConnectFail(m string, err error, kv ...*KV) {
 	msg := err.Error()
 	lm := &LogMessage{
 		Message: m,
@@ -109,7 +109,7 @@ func (l *StdLogger) ConnectFail(m string, err error, kv ...*KeyValue) {
 	logger.Warn(string(bytes))
 }
 
-func (l *StdLogger) WillPanic(m string, err error, kv ...*KeyValue) {
+func (l *StdLogger) WillPanic(m string, err error, kv ...*KV) {
 	msg := err.Error()
 	lm := &LogMessage{
 		Message: m,
@@ -148,7 +148,7 @@ func (l *StdLogger) HadPanic(m string, r interface{}) {
 	logger.Flush()
 }
 
-func (l *StdLogger) Error(m string, e error, kv ...*KeyValue) {
+func (l *StdLogger) Error(m string, e error, kv ...*KV) {
 	msg := "unknown error"
 	if e != nil {
 		msg = e.Error()
@@ -167,7 +167,7 @@ func (l *StdLogger) Error(m string, e error, kv ...*KeyValue) {
 	}
 }
 
-func (l *StdLogger) Warn(m string, kv ...*KeyValue) {
+func (l *StdLogger) Warn(m string, kv ...*KV) {
 
 	lm := &LogMessage{
 		Message: m,
@@ -185,7 +185,7 @@ func (l *StdLogger) Warn(m string, kv ...*KeyValue) {
 
 // Infom captures a simple message. If you are logging key value pairs,
 // use Info(m interface{})
-func (l *StdLogger) Inform(m string, kv ...*KeyValue) {
+func (l *StdLogger) Inform(m string, kv ...*KV) {
 	lm := &LogMessage{Message: m, Kind: "inform"}
 	SetKeyValue(lm, kv...)
 	if bytes, err := json.Marshal(lm); err != nil {
@@ -198,7 +198,7 @@ func (l *StdLogger) Inform(m string, kv ...*KeyValue) {
 // Info logs key value pairs, typically to JSON. Typically using an anonymous struct:
 //
 //		log.Info(struct{MyKey string}{MyKey:"value to capture"})
-func (l *StdLogger) Event(m string, kv ...*KeyValue) {
+func (l *StdLogger) Event(m string, kv ...*KV) {
 	lm := &LogMessage{
 		Message: m,
 		Kind:    "event",
@@ -212,7 +212,7 @@ func (l *StdLogger) Event(m string, kv ...*KeyValue) {
 	}
 }
 
-func (l *StdLogger) Debug(m string, kv ...*KeyValue) {
+func (l *StdLogger) Debug(m string, kv ...*KV) {
 	lm := &LogMessage{
 		Message: m,
 		Kind:    "debug",

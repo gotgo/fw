@@ -7,16 +7,12 @@ import (
 	"github.com/cihub/seelog"
 )
 
-func KV(key, value string) *KeyValue {
-	return &KeyValue{key, value}
-}
-
-type KeyValue struct {
+type KV struct {
 	Key   string      `json:"key"`
 	Value interface{} `json:"value"`
 }
 
-func SetKeyValue(lm *LogMessage, kv ...*KeyValue) {
+func SetKeyValue(lm *LogMessage, kv ...*KV) {
 	if kv == nil || len(kv) == 0 {
 		return
 	} else if len(kv) == 1 {

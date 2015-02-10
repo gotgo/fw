@@ -12,23 +12,23 @@ type Logger interface {
 	// what's wrong with the source data that causes the problem
 	UnmarshalFail(m string, data []byte, err error)
 
-	Timeout(m string, err error, kv ...*KeyValue)
-	ConnectFail(m string, err error, kv ...*KeyValue)
+	Timeout(m string, err error, kv ...*KV)
+	ConnectFail(m string, err error, kv ...*KV)
 }
 
 type LoggerBasic interface {
 	HadPanic(m string, p interface{})
-	WillPanic(m string, err error, kv ...*KeyValue)
+	WillPanic(m string, err error, kv ...*KV)
 
-	Error(m string, err error, kv ...*KeyValue)
-	Warn(m string, kv ...*KeyValue)
+	Error(m string, err error, kv ...*KV)
+	Warn(m string, kv ...*KV)
 
 	// Inform captures a simple message.
 	// Inform("Server is starting...")
-	Inform(m string, kv ...*KeyValue)
+	Inform(m string, kv ...*KV)
 
-	Event(m string, kv ...*KeyValue)
-	Debug(m string, kv ...*KeyValue)
+	Event(m string, kv ...*KV)
+	Debug(m string, kv ...*KV)
 
 	Log(m *LogMessage)
 }
