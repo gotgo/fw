@@ -3,6 +3,7 @@ package zoo
 import (
 	"fmt"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -122,7 +123,8 @@ func (z *KafkaKeeper) ensureSetup(c *zk.Conn) error {
 	return nil
 }
 
-func (z *KafkaKeeper) GetOffsets() (map[int]int64, error) {
+// GetOffsets - returns an array sorted by Partition ascending
+func (z *KafkaKeeper) GetOffsets() ([]*PartitionOffset, error) {
 	conn := z.connect()
 	defer conn.Close()
 
@@ -137,8 +139,8 @@ func (z *KafkaKeeper) GetOffsets() (map[int]int64, error) {
 		return nil, me.Err(err, "failed to get kafka partition info")
 	}
 
-	offsets := make(map[int]int64)
-	for _, p := range partitions {
+	po := make([]*PartitionOffset, len(partitions))
+	for i, p := range partitions {
 		//{partition}/consumed/{offset}
 		err := z.ensureExists(conn, path.Join(z.Consumer.PartitionsPath(), p, "consumed"), "0")
 		if err != nil {
@@ -148,11 +150,12 @@ func (z *KafkaKeeper) GetOffsets() (map[int]int64, error) {
 		if err != nil {
 			return nil, err
 		}
-		k, _ := strconv.Atoi(p)
-		v, _ := strconv.ParseInt(offset, 10, 0)
-		offsets[k] = v
+		p, _ := strconv.Atoi(p)
+		o, _ := strconv.ParseInt(offset, 10, 0)
+		po[i] = &PartitionOffset{Partition: p, Offset: o}
 	}
-	return offsets, nil
+	sort.Sort(ByPartition{po})
+	return po, nil
 }
 
 func (z *KafkaKeeper) SetOffset(partition int32, offset int64) error {

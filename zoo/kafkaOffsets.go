@@ -6,7 +6,7 @@ type KafkaOffsets struct {
 	ConsumerApp string
 }
 
-func (ko *KafkaOffsets) Offsets(topic string) (map[int]int64, error) {
+func (ko *KafkaOffsets) Offsets(topic string) ([]*PartitionOffset, error) {
 	hosts := ko.ZookeeperHosts
 	tc := &TopicConsumer{
 		Topic:       topic,
