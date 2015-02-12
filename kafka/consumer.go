@@ -95,7 +95,8 @@ func merge(done <-chan struct{}, cs ...<-chan *sarama.ConsumerEvent) <-chan *sar
 	}
 	wg.Add(len(cs))
 	for _, c := range cs {
-		go output(c)
+		local := c
+		go output(local)
 	}
 
 	// Start a goroutine to close out once all the output goroutines are
