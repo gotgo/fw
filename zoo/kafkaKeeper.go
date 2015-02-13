@@ -152,7 +152,7 @@ func (z *KafkaKeeper) GetOffsets() ([]*PartitionOffset, error) {
 		}
 		p, _ := strconv.Atoi(p)
 		o, _ := strconv.ParseInt(offset, 10, 0)
-		po[i] = &PartitionOffset{Partition: p, Offset: o}
+		po[i] = &PartitionOffset{Partition: int32(p), Offset: o}
 	}
 	sort.Sort(ByPartition{po})
 	return po, nil

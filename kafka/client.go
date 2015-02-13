@@ -113,6 +113,6 @@ func (c *Client) SendBytes(bts []byte, topic, key string) error {
 	return c.sendSync(bts, topic, key)
 }
 
-func (c *Client) NewConsumer(name, topic string, startingOffsets map[int]int64) *Consumer {
+func (c *Client) NewConsumer(name, topic string, startingOffsets map[int32]int64) *Consumer {
 	return NewConsumer(c.client, name, topic, startingOffsets)
 }

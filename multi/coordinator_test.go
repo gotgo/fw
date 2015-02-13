@@ -23,7 +23,7 @@ func (ta *TestAction) Error() error {
 }
 
 var _ = Describe("Coordinator", func() {
-	It("should succeed", func() {
+	PIt("should succeed", func() {
 		concurrency := 2
 		retries := 1
 		max := 1
@@ -44,7 +44,7 @@ var _ = Describe("Coordinator", func() {
 
 	})
 
-	It("should error", func() {
+	PIt("should error", func() {
 		concurrency := 2
 		retries := 0
 		max := 1

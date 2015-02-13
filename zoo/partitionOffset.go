@@ -1,7 +1,7 @@
 package zoo
 
 type PartitionOffset struct {
-	Partition int
+	Partition int32
 	Offset    int64
 }
 

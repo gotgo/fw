@@ -9,7 +9,7 @@ import (
 
 type Consumer struct {
 	ClientName      string
-	StartingOffsets map[int]int64
+	StartingOffsets map[int32]int64
 	Log             logging.Logger `inject:""`
 	Topic           string
 	stopper         chan struct{}
@@ -17,7 +17,7 @@ type Consumer struct {
 	client          *sarama.Client
 }
 
-func NewConsumer(client *sarama.Client, clientName, topic string, startingOffsets map[int]int64) *Consumer {
+func NewConsumer(client *sarama.Client, clientName, topic string, startingOffsets map[int32]int64) *Consumer {
 	consumer := &Consumer{
 		ClientName:      clientName,
 		StartingOffsets: startingOffsets,

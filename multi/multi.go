@@ -26,3 +26,7 @@ func GatherFailures(cs ...*Coordinator) []*Flow {
 	}
 	return flows
 }
+
+type TaskAction interface {
+	Run(input interface{}) (interface{}, error)
+}
