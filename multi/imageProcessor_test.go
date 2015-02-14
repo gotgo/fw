@@ -23,7 +23,7 @@ var _ = Describe("ImageProcessor", func() {
 			MaxHeight: 256,
 			MaxWidth:  256,
 		}
-		ctx = &DataContext{}
+		ctx = NewDataContext()
 		target.Startup()
 	})
 
