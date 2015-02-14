@@ -78,6 +78,8 @@ func resize(filePath string, maxWidth, maxHeight int) (*ImageResizeOutput, error
 		return nil, me.Err(err, "failed to close")
 	}
 
+	os.Remove(filePath)
+
 	// save the combined image to file
 	//	err = imaging.Save(thumb, thumbnailPath)
 	//if err != nil {
