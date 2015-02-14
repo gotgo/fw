@@ -14,11 +14,6 @@ type RecentlyExisted struct {
 func (r *RecentlyExisted) CheckAndAdd(t string) bool {
 	for _, c := range r.list {
 		if c == t {
-			u := r.current - 1
-			if u < 0 {
-				u = 0
-			}
-			r.list[u] = t
 			return true
 		}
 	}
