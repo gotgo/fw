@@ -57,7 +57,9 @@ func (ip *ImageProcessor) setup() {
 	}
 
 	ip.phasher = &TaskRun{
-		Action:       &PHashTask{},
+		Action: &PHashTask{
+			Log: ip.Log,
+		},
 		Concurrency:  2,
 		MaxQueuedIn:  2,
 		MaxQueuedOut: 100,
