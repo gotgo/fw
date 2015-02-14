@@ -182,7 +182,7 @@ func (p *ImageProcessor) wrapUp() {
 			dl := result.Previous(p.downloader.Name()).Output.(*FileDownloadOutput)
 			dlin := result.Previous(p.downloader.Name()).Input.(*FileDownloadInput)
 			rz := result.Previous(p.resizer.Name()).Output.(*ImageResizeOutput)
-			phash := result.Previous(p.phasher.Name()).Output.(uint64)
+			phash, _ := result.Previous(p.phasher.Name()).Output.(uint64)
 			ul := result.Previous(p.uploader.Name()).Output.(*FileUploadOutput)
 
 			if dl == nil || dlin == nil {
