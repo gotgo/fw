@@ -3,6 +3,7 @@ package multi
 import (
 	"os"
 	"path"
+	"strconv"
 	"sync"
 
 	"github.com/gotgo/fw/logging"
@@ -135,6 +136,7 @@ func (p *ImageProcessor) phash() {
 		} else {
 			result := dl.Context.Get(p.downloader.Name()).(*TaskRunResult)
 			dlo := result.Output.(*FileDownloadOutput)
+			p.Log.Inform("xxx - " + dlo.Path)
 			p.phasher.Add(dlo.Path, dl.Context)
 		}
 	}
@@ -143,9 +145,11 @@ func (p *ImageProcessor) phash() {
 }
 
 func (p *ImageProcessor) resize() {
+	i := 0
 	for ph := range p.phasher.Completed() {
+		i++
 		if ph.Error() != nil {
-			p.handleError("Phash failed", ph)
+			p.handleError("Phash failed ct:"+strconv.Itoa(i), ph)
 		} else {
 			result := ph.Context.Get(p.downloader.Name()).(*TaskRunResult)
 			dlo := result.Output.(*FileDownloadOutput)
