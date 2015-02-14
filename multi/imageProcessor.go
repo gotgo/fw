@@ -148,10 +148,12 @@ func (p *ImageProcessor) resize() {
 	i := 0
 	for ph := range p.phasher.Completed() {
 		i++
+		result := ph.Context.Get(p.downloader.Name()).(*TaskRunResult)
+
 		if ph.Error() != nil {
-			p.handleError("Phash failed ct:"+strconv.Itoa(i), ph)
+			dli := result.Input.(*FileDownloadInput)
+			p.handleError("Phash failed ct:"+strconv.Itoa(i)+" "+dli.Url, ph)
 		} else {
-			result := ph.Context.Get(p.downloader.Name()).(*TaskRunResult)
 			dlo := result.Output.(*FileDownloadOutput)
 			p.resizer.Add(dlo.Path, ph.Context)
 		}
