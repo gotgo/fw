@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/Shopify/sarama"
 	"github.com/gotgo/fw/logging"
 	"github.com/gotgo/fw/me"
+	"github.com/kraveio/sarama"
 )
 
 type Client struct {

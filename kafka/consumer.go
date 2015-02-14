@@ -3,8 +3,8 @@ package kafka
 import (
 	"sync"
 
-	"github.com/Shopify/sarama"
 	"github.com/gotgo/fw/logging"
+	"github.com/kraveio/sarama"
 )
 
 type Consumer struct {
@@ -108,10 +108,15 @@ func merge(done <-chan struct{}, cs ...<-chan *sarama.ConsumerEvent) <-chan *sar
 	return out
 }
 
-func (c *Consumer) getConsumer(client *sarama.Client, topic string, partition int32, consumerName string, startAtOffset int64) (*sarama.Consumer, error) {
+func (c *Consumer) getConsumer(client *sarama.Client, topic string, partition int32, consumerName string, startAtOffset int64) (*sarama.PartitionConsumer, error) {
 	config := sarama.NewConsumerConfig()
-	config.EventBufferSize = 1
-	config.OffsetMethod = sarama.OffsetMethodManual
-	config.OffsetValue = startAtOffset
-	return sarama.NewConsumer(client, topic, partition, consumerName, config)
+	consumer, err := sarama.NewConsumer(client, config)
+	if err != nil {
+		return nil, err
+	}
+	pconfig := sarama.NewPartitionConsumerConfig()
+	pconfig.OffsetValue = startAtOffset
+	pconfig.OffsetMethod = sarama.OffsetMethodManual
+	return consumer.ConsumePartition(topic, partition, pconfig)
+
 }
