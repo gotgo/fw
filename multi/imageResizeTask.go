@@ -17,22 +17,26 @@ type ResizeImageResult struct {
 }
 
 type ResizeImageTask struct {
-	MaxDimension int
+	MaxWidth  int
+	MaxHeight int
 }
 
-func (p *ResizeImageTask) Run(input interface{}) (interface{}, error) {
+func (r *ResizeImageTask) Run(input interface{}) (interface{}, error) {
 	filepath := input.(string)
-	return resize(filepath, p.MaxDimension)
+	return resize(filepath, r.MaxWidth, r.MaxHeight)
 }
 
-func resize(filePath string, maxSize int) (*ResizeImageResult, error) {
+func (r *ResizeImageTask) Name() string {
+	return "resizeImage"
+}
+
+func resize(filePath string, maxWidth, maxHeight int) (*ResizeImageResult, error) {
 	img, err := imaging.Open(filePath)
 	if err != nil {
 		return nil, me.Err(err, "failed to open "+filePath)
 	}
 
-	w, h := maxSize, maxSize
-	thumb := imaging.Fit(img, w, h, imaging.CatmullRom)
+	thumb := imaging.Fit(img, maxWidth, maxHeight, imaging.CatmullRom)
 
 	height := thumb.Rect.Dy()
 	width := thumb.Rect.Dx()

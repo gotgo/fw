@@ -1,0 +1,6 @@
+-- os x
+brew install imagemagick
+
+-- ubuntu
+sudo apt-get install libphash0 libphash-dev
+

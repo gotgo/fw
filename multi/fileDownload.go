@@ -5,145 +5,13 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"sync"
 	"time"
 
-	"github.com/gotgo/fw/logging"
 	"github.com/gotgo/fw/me"
-	"github.com/gotgo/fw/stats"
 )
 
-const downloadTimeOut = time.Second * 60
-
-func NewFileDownloads(folder string, concurrency int, inMax, outMax int) *FileDownloads {
-	fd := &FileDownloads{
-		Folder:      folder,
-		Concurrency: concurrency,
-	}
-	return fd
-}
-
-func (d *FileDownloads) setup() {
-	if d.Folder == "" {
-		d.Folder = os.TempDir()
-	}
-	if d.Concurrency == 0 {
-		d.Concurrency = 1
-	}
-	if d.MaxQueuedIn == 0 {
-		d.MaxQueuedIn = 1
-	}
-	if d.MaxQueuedOut == 0 {
-		d.MaxQueuedOut = 1
-	}
-	d.input = make(chan *FileDownloadsInput, d.MaxQueuedIn)
-	d.output = make(chan *FileDownloadsResult, d.MaxQueuedOut)
-	d.shutdown = make(chan struct{})
-	d.outstanding = &sync.WaitGroup{}
-	d.once = &sync.Once{}
-
-	d.Track = stats.NewBasicMeter("image.downloader", me.App.Environment())
-}
-
-func (d *FileDownloads) Start() {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
-
-	if d.running {
-		panic("already running")
-	}
-	d.running = true
-	//TODO: prevent start from being called twice
-	d.setup()
-	concurrency := d.Concurrency
-
-	for i := 0; i < concurrency; i++ {
-		go d.run()
-	}
-}
-
-type FileDownloads struct {
-	Folder string
-
-	mutex        sync.Mutex
-	Track        stats.BasicMeter
-	Log          logging.Logger
-	Concurrency  int
-	MaxQueuedIn  int
-	MaxQueuedOut int
-	running      bool
-	input        chan *FileDownloadsInput
-	output       chan *FileDownloadsResult
-	outstanding  *sync.WaitGroup
-	once         *sync.Once
-	done         chan struct{}
-	shutdown     chan struct{}
-}
-
-type FileDownloadsInput struct {
-	Url      string
-	Filename string
-}
-
-type FileDownloadsResult struct {
-	Error  error
-	Input  *FileDownloadsInput
-	Output *FileDownloadsOutput
-}
-
-type FileDownloadsOutput struct {
-	Path        string
-	Size        int64
-	ContentType string
-}
-
-// Add - will block when the number of items queued reaches MaxQueuedInput
-func (d *FileDownloads) Add(todo *FileDownloadsInput) {
-	d.input <- todo
-}
-
-func (d *FileDownloads) Completed() <-chan *FileDownloadsResult {
-	return d.output
-}
-
-// Shutdown - begins the shutdown operation. Reading on the returned channel will block until the shutdown is complete
-func (d *FileDownloads) Shutdown() chan struct{} {
-	close(d.input) //no more input
-	return d.done
-}
-
-func (d *FileDownloads) run() {
-	for in := range d.input {
-		d.safeDownload(in)
-	}
-	d.outstanding.Wait()
-
-	d.once.Do(func() {
-		close(d.output)
-		close(d.done)
-	})
-}
-
-func (d *FileDownloads) safeDownload(in *FileDownloadsInput) {
-	folder := d.Folder
-	d.outstanding.Add(1)
-	defer func() {
-		d.outstanding.Done()
-		if r := recover(); r != nil {
-			me.LogRecoveredPanic(d.Log, "download failed", r, &logging.KV{"from", d})
-		}
-	}()
-
-	out, err := download(in.Url, in.Filename, folder)
-	d.output <- &FileDownloadsResult{
-		Error:  err,
-		Input:  in,
-		Output: out,
-	}
-}
-
-func download(url, filename, folder string) (*FileDownloadsOutput, error) {
-	output := &FileDownloadsOutput{}
+func download(url, filename, folder string, timeout time.Duration) (*FileDownloadOutput, error) {
+	output := &FileDownloadOutput{}
 
 	//create file first, so we know we're able to save to disk
 	fp := path.Join(folder, filename)
@@ -153,12 +21,8 @@ func download(url, filename, folder string) (*FileDownloadsOutput, error) {
 	}
 	defer file.Close()
 
-	//d.Log.Debug("downloading " + fp)
-
-	//download
-	//started := time.Now()
 	client := http.Client{
-		Timeout: downloadTimeOut,
+		Timeout: timeout,
 	}
 	resp, err := client.Get(url)
 	if err != nil {
@@ -182,14 +46,36 @@ func download(url, filename, folder string) (*FileDownloadsOutput, error) {
 	return output, nil
 }
 
-type DownloadTask struct {
-	Folder string
+const defaultTimeout = time.Second * 30
+
+type FileDownloadTask struct {
+	Folder  string
+	Timeout time.Duration
 }
 
-func (d *DownloadTask) Run(input interface{}) (interface{}, error) {
-	in, ok := input.(*FileDownloadsInput)
+func (d *FileDownloadTask) Run(input interface{}) (interface{}, error) {
+	in, ok := input.(*FileDownloadInput)
 	if !ok {
 		panic("unexpected type")
 	}
-	return download(in.Url, in.Filename, d.Folder)
+	timeout := d.Timeout
+	if timeout <= 0 {
+		timeout = defaultTimeout
+	}
+	return download(in.Url, in.Filename, d.Folder, timeout)
+}
+
+func (d *FileDownloadTask) Name() string {
+	return "fileDownload"
+}
+
+type FileDownloadInput struct {
+	Url      string
+	Filename string
+}
+
+type FileDownloadOutput struct {
+	Path        string
+	Size        int64
+	ContentType string
 }

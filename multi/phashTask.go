@@ -1,6 +1,10 @@
 package multi
 
-import cphash "github.com/kavu/go-phash"
+import (
+	"fmt"
+
+	cphash "github.com/kavu/go-phash"
+)
 
 func PHashTaskIn(filepath string) interface{} {
 	return filepath
@@ -17,6 +21,11 @@ func (p *PHashTask) Run(input interface{}) (interface{}, error) {
 	if !ok {
 		panic("wrong type")
 	}
+	fmt.Println(filepath)
 	hash, err := cphash.ImageHashDCT(filepath)
 	return hash, err
+}
+
+func (p *PHashTask) Name() string {
+	return "phash"
 }
