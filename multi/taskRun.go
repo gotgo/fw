@@ -132,13 +132,15 @@ func (t *TaskRun) safeExecute(task *TaskRunInput) {
 	defer func() {
 		t.outstanding.Done()
 		if r := recover(); r != nil {
-			me.LogRecoveredPanic(t.Log, "execute failed", r, &logging.KV{"from", t})
+			r := &TaskRunResult{
+				Error: me.NewErr("recovered from panic"),
+			}
+			task.Context.Set(t.Name(), r)
 			t.output <- &TaskRunOutput{
-				result: &TaskRunResult{
-					Error: me.NewErr("recovered from panic"),
-				},
+				result:  r,
 				Context: task.Context,
 			}
+			me.LogRecoveredPanic(t.Log, "execute failed", r, &logging.KV{"from", t})
 		}
 	}()
 
