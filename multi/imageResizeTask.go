@@ -8,7 +8,7 @@ import (
 	"github.com/gotgo/fw/me"
 )
 
-type ResizeImageResult struct {
+type ImageResizeOutput struct {
 	FileSize    int64
 	Height      int
 	Width       int
@@ -30,7 +30,7 @@ func (r *ResizeImageTask) Name() string {
 	return "resizeImage"
 }
 
-func resize(filePath string, maxWidth, maxHeight int) (*ResizeImageResult, error) {
+func resize(filePath string, maxWidth, maxHeight int) (*ImageResizeOutput, error) {
 	img, err := imaging.Open(filePath)
 	if err != nil {
 		return nil, me.Err(err, "failed to open "+filePath)
@@ -73,7 +73,7 @@ func resize(filePath string, maxWidth, maxHeight int) (*ResizeImageResult, error
 	//if err != nil {
 	//	return "", me.Err(err, "failed to save")
 	//}
-	return &ResizeImageResult{
+	return &ImageResizeOutput{
 		FilePath:    thumbnailPath,
 		Height:      height,
 		Width:       width,

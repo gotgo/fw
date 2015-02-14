@@ -170,9 +170,14 @@ func (z *KafkaKeeper) SetOffset(partition int32, offset int64) error {
 
 	fmt.Printf("zookeeper path", path)
 	//force version for now
-	_, version, err := z.get(conn, path)
+	existingValue, version, err := z.get(conn, path)
 	if err != nil {
 		return err
+	}
+
+	//don't go backwards
+	if eo, err := strconv.ParseInt(existingValue, 10, 64); err == nil && eo >= offset {
+		return nil
 	}
 
 	err = z.set(conn, path, fmt.Sprintf("%d", offset), version)

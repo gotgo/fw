@@ -20,6 +20,8 @@ var _ = Describe("ImageProcessor", func() {
 			LocalPath: "/tmp/test",
 			Uploader:  &NoOpUploader{},
 			Log:       &logging.ConsoleLogger{},
+			MaxHeight: 256,
+			MaxWidth:  256,
 		}
 		ctx = &DataContext{}
 		target.Startup()

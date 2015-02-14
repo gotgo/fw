@@ -11,7 +11,7 @@ import (
 
 const s3Root = "s3-us-west-2.amazonaws.com"
 
-type FileUploadResult struct {
+type FileUploadOutput struct {
 	Url      string
 	FileSize int64
 }
@@ -28,7 +28,7 @@ func (u *FileUploadTask) Name() string {
 	return "upload"
 }
 
-func doUpload(uploader Uploader, localFilePath string) (*FileUploadResult, error) {
+func doUpload(uploader Uploader, localFilePath string) (*FileUploadOutput, error) {
 
 	file, err := os.Open(localFilePath)
 	if err != nil {
@@ -53,8 +53,7 @@ func doUpload(uploader Uploader, localFilePath string) (*FileUploadResult, error
 
 	os.Remove(localFilePath)
 	//	os.Remove(thumbnailPath)
-	//	u.Log.Debug(fmt.Sprintf("uploaded file to s3 file : %s", thumbnailPath))
-	return &FileUploadResult{
+	return &FileUploadOutput{
 		Url:      uploader.DestinationUrl(filename),
 		FileSize: size,
 	}, nil

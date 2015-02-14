@@ -18,13 +18,16 @@ type ImageProcessor struct {
 
 	Log logging.Logger
 
+	MaxHeight int
+	MaxWidth  int
+
 	downloader *TaskRun
 	phasher    *TaskRun
 	resizer    *TaskRun
 	uploader   *TaskRun
 
 	outstanding sync.WaitGroup
-	complete    chan *TaskRunOutput
+	complete    chan *ImageProcessorOutput
 }
 
 func (ip *ImageProcessor) setup() {
@@ -44,7 +47,7 @@ func (ip *ImageProcessor) setup() {
 
 	os.MkdirAll(tempFolder, 0774)
 
-	ip.complete = make(chan *TaskRunOutput, 100)
+	ip.complete = make(chan *ImageProcessorOutput, 100)
 
 	ip.downloader = &TaskRun{
 		Action:       &FileDownloadTask{Folder: tempFolder},
@@ -61,7 +64,7 @@ func (ip *ImageProcessor) setup() {
 	}
 
 	ip.resizer = &TaskRun{
-		Action:       &ResizeImageTask{MaxHeight: 512, MaxWidth: 512},
+		Action:       &ResizeImageTask{MaxHeight: ip.MaxHeight, MaxWidth: ip.MaxWidth},
 		Concurrency:  6,
 		MaxQueuedIn:  12,
 		MaxQueuedOut: 100,
@@ -116,7 +119,7 @@ func (p *ImageProcessor) doScavenge() {
 
 func (p *ImageProcessor) handleError(message string, result *TaskRunOutput) {
 	p.Log.Error(message, result.Error())
-	p.complete <- result
+	p.complete <- &ImageProcessorOutput{Error: result.Error()}
 }
 
 func (p *ImageProcessor) phash() {
@@ -152,7 +155,7 @@ func (p *ImageProcessor) upload() {
 		if rz.Error() != nil {
 			p.handleError("resize failed", rz)
 		} else {
-			rzOut := rz.Output().(*ResizeImageResult)
+			rzOut := rz.Output().(*ImageResizeOutput)
 			p.uploader.Add(rzOut.FilePath, rz.Context)
 		}
 	}
@@ -165,13 +168,47 @@ func (p *ImageProcessor) wrapUp() {
 		if result.Error() != nil {
 			p.handleError("upload failed", result)
 		} else {
-			p.complete <- result
+			dl := result.Previous(p.downloader.Name()).Output.(*FileDownloadOutput)
+			dlin := result.Previous(p.downloader.Name()).Output.(*FileDownloadInput)
+			rz := result.Previous(p.resizer.Name()).Output.(*ImageResizeOutput)
+			phash := result.Previous(p.phasher.Name()).Output.(uint64)
+			ul := result.Previous(p.uploader.Name()).Output.(*FileUploadOutput)
+
+			r := &ImageProcessorOutput{
+				DownloadSize:        dl.Size,
+				DownloadContentType: dl.ContentType,
+				DownloadUrl:         dlin.Url,
+				PHash:               phash,
+				FileSize:            rz.FileSize,
+				Height:              rz.Height,
+				Width:               rz.Width,
+				ContentType:         rz.ContentType,
+				DestinationUrl:      ul.Url,
+				Error:               result.Error(),
+			}
+
+			p.complete <- r
 		}
 	}
 	close(p.complete)
 	p.outstanding.Done()
 }
 
-func (p *ImageProcessor) Completed() <-chan *TaskRunOutput {
+func (p *ImageProcessor) Completed() <-chan *ImageProcessorOutput {
 	return p.complete
+}
+
+type ImageProcessorOutput struct {
+	DownloadSize        int64
+	DownloadContentType string
+	DownloadUrl         string
+	PHash               uint64
+
+	FileSize    int64
+	Height      int
+	Width       int
+	ContentType string
+
+	DestinationUrl string
+	Error          error
 }

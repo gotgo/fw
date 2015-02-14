@@ -91,6 +91,10 @@ func (o *TaskRunOutput) Output() interface{} {
 	return o.result.Output
 }
 
+func (o *TaskRunOutput) Previous(name string) *TaskRunResult {
+	return o.Context.Get(name).(*TaskRunResult)
+}
+
 // Add - will block when the number of items queued reaches MaxQueuedInput
 func (t *TaskRun) Add(todo interface{}, context *DataContext) {
 	t.input <- &TaskRunInput{Input: todo, Context: context}
