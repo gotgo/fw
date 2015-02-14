@@ -1,12 +1,18 @@
 package multi
 
 import (
+	"bufio"
+	"fmt"
+	"image"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"math/rand"
+	"net/http"
 	"os"
 	"path/filepath"
 
+	"github.com/amattn/deeperror"
 	"github.com/disintegration/imaging"
 	"github.com/gotgo/fw/me"
 )
@@ -34,6 +40,7 @@ func (r *ResizeImageTask) Name() string {
 }
 
 func resize(filePath string, maxWidth, maxHeight int) (*ImageResizeOutput, error) {
+	fmt.Printf("opening file to resize " + filePath)
 	img, err := imaging.Open(filePath)
 	if err != nil {
 		return nil, me.Err(err, "failed to open "+filePath)
@@ -83,4 +90,34 @@ func resize(filePath string, maxWidth, maxHeight int) (*ImageResizeOutput, error
 		ContentType: "image/png",
 		FileSize:    size,
 	}, nil
+}
+
+func getContentType(filepath string) (string, error) {
+	file, err := os.Open(filepath)
+	if err != nil {
+		return "", deeperror.New(rand.Int63(), "failed to open image", err)
+	}
+	defer file.Close()
+	//if fi, err := file.Stat(); err == nil {
+	//	i.Term.Size = fi.Size()
+	//}
+	rdr := bufio.NewReader(file)
+	bts, _ := rdr.Peek(512)
+	contentType := http.DetectContentType(bts)
+
+	//m, _, err := image.Decode(rdr)
+	_, _, err = image.Decode(rdr)
+	if err != nil {
+		return contentType, me.Err(err, "Failed to decode image")
+	}
+
+	return contentType, nil
+
+	//	if m != nil {
+	//		size := m.Bounds().Size()
+	//		i.Term.Width = size.X
+	//		i.Term.Height = size.Y
+	//		i.Log.Debug(fmt.Sprintf("imaged type %s width:%d height:%d", contentType, size.X, size.Y))
+	//	}
+	//	return nil
 }
