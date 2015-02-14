@@ -23,6 +23,7 @@ func (p *PHashTask) Run(input interface{}) (interface{}, error) {
 	if !ok {
 		panic("wrong type")
 	}
+	time.Sleep(time.Second * 5)
 	fi, err := os.Stat(filepath)
 	if err != nil || fi.Size() == int64(0) {
 		fmt.Println("sleeping.....")
