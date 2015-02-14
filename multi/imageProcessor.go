@@ -53,7 +53,7 @@ func (ip *ImageProcessor) setup() {
 
 	ip.downloader = &TaskRun{
 		Action:       &FileDownloadTask{Folder: tempFolder},
-		Concurrency:  5,
+		Concurrency:  1,
 		MaxQueuedIn:  10 * 5,
 		MaxQueuedOut: 10 * 10,
 	}
@@ -62,21 +62,21 @@ func (ip *ImageProcessor) setup() {
 		Action: &PHashTask{
 			Log: ip.Log,
 		},
-		Concurrency:  2,
+		Concurrency:  1,
 		MaxQueuedIn:  2,
 		MaxQueuedOut: 100,
 	}
 
 	ip.resizer = &TaskRun{
 		Action:       &ResizeImageTask{MaxHeight: ip.MaxHeight, MaxWidth: ip.MaxWidth},
-		Concurrency:  4,
+		Concurrency:  1,
 		MaxQueuedIn:  12,
 		MaxQueuedOut: 100,
 	}
 
 	ip.uploader = &TaskRun{
 		Action:       &FileUploadTask{Uploader: uploader},
-		Concurrency:  4,
+		Concurrency:  1,
 		MaxQueuedIn:  8 * 10,
 		MaxQueuedOut: 100,
 	}
@@ -131,6 +131,9 @@ func (p *ImageProcessor) handleError(message string, result *TaskRunOutput) {
 
 func (p *ImageProcessor) phash() {
 	for dl := range p.downloader.Completed() {
+		mutex.Lock()
+		mutex.Unlock()
+
 		if dl.Error() != nil {
 			p.handleError("download failed", dl)
 		} else {
@@ -146,6 +149,9 @@ func (p *ImageProcessor) phash() {
 func (p *ImageProcessor) resize() {
 	i := 0
 	for ph := range p.phasher.Completed() {
+		mutex.Lock()
+		mutex.Unlock()
+
 		i++
 		result := ph.Context.Get(p.downloader.Name()).(*TaskRunResult)
 
@@ -163,6 +169,9 @@ func (p *ImageProcessor) resize() {
 
 func (p *ImageProcessor) upload() {
 	for rz := range p.resizer.Completed() {
+		mutex.Lock()
+		mutex.Unlock()
+
 		if rz.Error() != nil {
 			p.handleError("resize failed", rz)
 		} else {
@@ -174,9 +183,13 @@ func (p *ImageProcessor) upload() {
 	p.outstanding.Done()
 }
 
-func (p *ImageProcessor) wrapUp() {
+var mutex sync.Mutex
 
+func (p *ImageProcessor) wrapUp() {
 	for result := range p.uploader.Completed() {
+		mutex.Lock()
+		mutex.Unlock()
+
 		if result.Error() != nil {
 			p.handleError("upload failed", result)
 		} else {
@@ -190,7 +203,14 @@ func (p *ImageProcessor) wrapUp() {
 				panic("nil - download in or out")
 			}
 			if rz == nil {
-				panic("nil - resizer")
+				r := result.Context.Get(p.resizer.Name()).(*TaskRunResult)
+				if r.Error != nil {
+					p.Log.Error("slipped through error", r.Error)
+				} else if r.Output != nil {
+					p.Log.Warn("WTF")
+				} else {
+					panic("nil - resizer")
+				}
 			}
 			if ul == nil {
 				panic("nil - upload")

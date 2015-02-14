@@ -117,6 +117,8 @@ func (t *TaskRun) Name() string {
 
 func (t *TaskRun) run() {
 	for in := range t.input {
+		mutex.Lock()
+		mutex.Unlock()
 		t.safeExecute(in)
 	}
 	t.outstanding.Wait()
