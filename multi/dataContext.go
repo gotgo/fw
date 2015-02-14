@@ -2,29 +2,27 @@ package multi
 
 import "sync"
 
-type DataContext struct {
-	data  map[string]interface{}
-	mutex sync.Mutex
+func NewDataContext() *DataContext {
+	return &DataContext{
+		data:  make(map[string]interface{}),
+		mutex: new(sync.Mutex),
+	}
 }
 
-// must be called from inside a lock
-func (c *DataContext) unsafeGetData() map[string]interface{} {
-	if c.data == nil {
-		c.data = make(map[string]interface{})
-	}
-	return c.data
+type DataContext struct {
+	data  map[string]interface{}
+	mutex *sync.Mutex
 }
 
 func (c *DataContext) Set(key string, value interface{}) {
 	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	data := c.unsafeGetData()
-	data[key] = value
+	c.data[key] = value
+	c.mutex.Unlock()
 }
 
 func (c *DataContext) Get(key string) interface{} {
 	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	data := c.unsafeGetData()
-	return data[key]
+	r := c.data[key]
+	c.mutex.Unlock()
+	return r
 }
