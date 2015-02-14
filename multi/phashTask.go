@@ -1,6 +1,12 @@
 package multi
 
-import cphash "github.com/kavu/go-phash"
+import (
+	"fmt"
+	"os"
+	"time"
+
+	cphash "github.com/kavu/go-phash"
+)
 
 func PHashTaskIn(filepath string) interface{} {
 	return filepath
@@ -17,6 +23,12 @@ func (p *PHashTask) Run(input interface{}) (interface{}, error) {
 	if !ok {
 		panic("wrong type")
 	}
+	fi, err := os.Stat(filepath)
+	if err != nil || fi.Size() == int64(0) {
+		fmt.Println("sleeping.....")
+		time.Sleep(time.Second * 2)
+	}
+
 	hash, err := cphash.ImageHashDCT(filepath)
 	return hash, err
 }
