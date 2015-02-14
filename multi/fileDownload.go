@@ -26,7 +26,7 @@ func download(url, filename, folder string, timeout time.Duration) (*FileDownloa
 	}
 	resp, err := client.Get(url)
 	if err != nil {
-		return nil, me.Err(err, "download")
+		return nil, me.Err(err, "failed to get URL ")
 	}
 	defer resp.Body.Close()
 	//output.ContentType = resp.ContentType
@@ -36,6 +36,8 @@ func download(url, filename, folder string, timeout time.Duration) (*FileDownloa
 	//save to disk
 	if size, err := io.Copy(file, resp.Body); err != nil {
 		return nil, me.Err(err, "failed to save downloaded file")
+	} else if size == 0 {
+		return nil, me.NewErr("downloaded file size was zero on copy")
 	} else if size > 0 {
 		output.Size = size
 		//	d.Track.Size("saved", size)
