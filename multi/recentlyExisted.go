@@ -14,19 +14,19 @@ type RecentlyExisted struct {
 func (r *RecentlyExisted) CheckAndAdd(t string) bool {
 	for _, c := range r.list {
 		if c == t {
-			u := current - 1
+			u := r.current - 1
 			if u < 0 {
 				u = 0
 			}
-			list[u] = t
+			r.list[u] = t
 			return true
 		}
 	}
 
-	list[current] = t
-	current++
-	if current == len(list) {
-		current = 0
+	r.list[r.current] = t
+	r.current++
+	if r.current == len(r.list) {
+		r.current = 0
 	}
 	return false
 }
