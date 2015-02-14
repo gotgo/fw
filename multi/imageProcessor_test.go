@@ -38,7 +38,7 @@ var _ = Describe("ImageProcessor", func() {
 
 		target.Injest(url, filename, ctx)
 		result := <-target.Completed()
-		Expect(result.Error()).To(BeNil())
+		Expect(result.Error).To(BeNil())
 		//TODO: more tests
 	})
 
