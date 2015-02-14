@@ -1,9 +1,8 @@
 package multi
 
 import (
-	"io"
+	"io/ioutil"
 	"net/http"
-	"os"
 	"path"
 	"time"
 
@@ -11,44 +10,37 @@ import (
 )
 
 func download(url, filename, folder string, timeout time.Duration) (*FileDownloadOutput, error) {
-	output := &FileDownloadOutput{}
-
-	//create file first, so we know we're able to save to disk
 	fp := path.Join(folder, filename)
-	file, err := os.Create(fp)
-	if err != nil {
-		return nil, me.Err(err, "create file")
+	output := &FileDownloadOutput{
+		Path: fp,
 	}
-	defer file.Close()
 
 	client := http.Client{
 		Timeout: timeout,
 	}
+
 	resp, err := client.Get(url)
 	if err != nil {
 		return nil, me.Err(err, "failed to get URL ")
 	}
-	defer resp.Body.Close()
+
+	bts, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, me.Err(err, "failed to read all bytes")
+	}
+
+	resp.Body.Close()
+
+	ioutil.WriteFile(fp, bts, 0666)
+
 	//output.ContentType = resp.ContentType
 	//d.Track.Duration("download", started)
 	//d.Track.Size("download", resp.ContentLength)
 
-	//save to disk
-	if size, err := io.Copy(file, resp.Body); err != nil {
-		return nil, me.Err(err, "failed to save downloaded file")
-	} else if size == 0 {
-		return nil, me.NewErr("downloaded file size was zero on copy")
-	} else if size > 0 {
-		output.Size = size
-		//	d.Track.Size("saved", size)
-	}
-	file.Sync()
-	file.Close()
-	output.Path = fp
 	return output, nil
 }
 
-const defaultTimeout = time.Second * 30
+const defaultTimeout = time.Second * 60
 
 type FileDownloadTask struct {
 	Folder  string
