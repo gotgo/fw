@@ -1,4 +1,4 @@
-package mutli
+package multi
 
 func NewRecentlyExisted(size int) *RecentlyExisted {
 	return &RecentlyExisted{
