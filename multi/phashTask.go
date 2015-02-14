@@ -30,6 +30,7 @@ func (p *PHashTask) Run(input interface{}) (interface{}, error) {
 	fi, err := os.Stat(filepath)
 	if err != nil {
 		me.LogError(p.Log, "failed with path "+filepath, err)
+		return nil, err
 	}
 	if fi.Size() == int64(0) {
 		me.LogInform(p.Log, "size is zero sleeping.....for 10 seconds for "+filepath)
