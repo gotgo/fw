@@ -119,7 +119,10 @@ func (p *ImageProcessor) doScavenge() {
 
 func (p *ImageProcessor) handleError(message string, result *TaskRunOutput) {
 	p.Log.Error(message, result.Error())
-	p.complete <- &ImageProcessorOutput{Error: result.Error()}
+	p.complete <- &ImageProcessorOutput{
+		Error:   result.Error(),
+		Context: result.Context,
+	}
 }
 
 func (p *ImageProcessor) phash() {
@@ -185,6 +188,7 @@ func (p *ImageProcessor) wrapUp() {
 				ContentType:         rz.ContentType,
 				DestinationUrl:      ul.Url,
 				Error:               result.Error(),
+				Context:             result.Context,
 			}
 
 			p.complete <- r
@@ -211,4 +215,5 @@ type ImageProcessorOutput struct {
 
 	DestinationUrl string
 	Error          error
+	Context        *DataContext
 }
