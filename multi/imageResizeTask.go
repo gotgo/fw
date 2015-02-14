@@ -53,7 +53,7 @@ func resize(filePath string, maxWidth, maxHeight int) (*ImageResizeOutput, error
 
 	dir, file := filepath.Split(filePath)
 	ext := filepath.Ext(file)
-	thumbnailPath := filepath.Join(dir, file[0:len(file)-len(ext)])
+	thumbnailPath := filepath.Join(dir, file[0:len(file)-len(ext)]+fmt.Sprintf("_%dx%d", maxWidth, maxHeight))
 	f, err := os.Create(thumbnailPath)
 	if err != nil {
 		return nil, me.Err(err, "failed to create new emtpy file")
