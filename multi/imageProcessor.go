@@ -52,7 +52,7 @@ func (ip *ImageProcessor) setup() {
 
 	ip.downloader = &TaskRun{
 		Action:       &FileDownloadTask{Folder: tempFolder},
-		Concurrency:  10,
+		Concurrency:  1,
 		MaxQueuedIn:  10 * 5,
 		MaxQueuedOut: 10 * 10,
 	}
