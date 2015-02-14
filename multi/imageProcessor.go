@@ -53,7 +53,7 @@ func (ip *ImageProcessor) setup() {
 
 	ip.downloader = &TaskRun{
 		Action:       &FileDownloadTask{Folder: tempFolder},
-		Concurrency:  1,
+		Concurrency:  10,
 		MaxQueuedIn:  10 * 5,
 		MaxQueuedOut: 10 * 10,
 	}
@@ -136,7 +136,6 @@ func (p *ImageProcessor) phash() {
 		} else {
 			result := dl.Context.Get(p.downloader.Name()).(*TaskRunResult)
 			dlo := result.Output.(*FileDownloadOutput)
-			p.Log.Inform("xxx - " + dlo.Path)
 			p.phasher.Add(dlo.Path, dl.Context)
 		}
 	}
