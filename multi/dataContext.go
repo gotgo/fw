@@ -4,25 +4,25 @@ import "sync"
 
 func NewDataContext() *DataContext {
 	return &DataContext{
-		data:  make(map[string]interface{}),
-		mutex: new(sync.Mutex),
+		data: make(map[string]interface{}),
 	}
 }
 
 type DataContext struct {
 	data  map[string]interface{}
-	mutex *sync.Mutex
+	mutex sync.Mutex
 }
 
 func (c *DataContext) Set(key string, value interface{}) {
+
 	c.mutex.Lock()
+	defer c.mutex.Unlock()
 	c.data[key] = value
-	c.mutex.Unlock()
 }
 
 func (c *DataContext) Get(key string) interface{} {
 	c.mutex.Lock()
+	defer c.mutex.Unlock()
 	r := c.data[key]
-	c.mutex.Unlock()
 	return r
 }

@@ -36,7 +36,7 @@ var _ = Describe("TaskRun", func() {
 		for i := 0; i < len(list); i++ {
 			list[i], _ = strconv.Unquote(strconv.QuoteRune('a' + rune(1)))
 		}
-		ctx = &DataContext{}
+		ctx = NewDataContext()
 		action = &CountAction{
 			Count: new(int32),
 		}

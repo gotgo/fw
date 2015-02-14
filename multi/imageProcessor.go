@@ -53,7 +53,7 @@ func (ip *ImageProcessor) setup() {
 
 	ip.downloader = &TaskRun{
 		Action:       &FileDownloadTask{Folder: tempFolder},
-		Concurrency:  10,
+		Concurrency:  5,
 		MaxQueuedIn:  10 * 5,
 		MaxQueuedOut: 10 * 10,
 	}
@@ -69,14 +69,14 @@ func (ip *ImageProcessor) setup() {
 
 	ip.resizer = &TaskRun{
 		Action:       &ResizeImageTask{MaxHeight: ip.MaxHeight, MaxWidth: ip.MaxWidth},
-		Concurrency:  6,
+		Concurrency:  4,
 		MaxQueuedIn:  12,
 		MaxQueuedOut: 100,
 	}
 
 	ip.uploader = &TaskRun{
 		Action:       &FileUploadTask{Uploader: uploader},
-		Concurrency:  8,
+		Concurrency:  4,
 		MaxQueuedIn:  8 * 10,
 		MaxQueuedOut: 100,
 	}
@@ -175,6 +175,7 @@ func (p *ImageProcessor) upload() {
 }
 
 func (p *ImageProcessor) wrapUp() {
+
 	for result := range p.uploader.Completed() {
 		if result.Error() != nil {
 			p.handleError("upload failed", result)
