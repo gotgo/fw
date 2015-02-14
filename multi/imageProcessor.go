@@ -45,7 +45,7 @@ func (ip *ImageProcessor) setup() {
 		tempFolder = path.Join(os.TempDir(), "downloads")
 	}
 
-	os.MkdirAll(tempFolder, 0774)
+	os.MkdirAll(tempFolder, 0777)
 
 	ip.complete = make(chan *ImageProcessorOutput, 100)
 
