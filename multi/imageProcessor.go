@@ -177,6 +177,10 @@ func (p *ImageProcessor) wrapUp() {
 			phash := result.Previous(p.phasher.Name()).Output.(uint64)
 			ul := result.Previous(p.uploader.Name()).Output.(*FileUploadOutput)
 
+			if dl == nil || dlin == nil || rz == nil || ul == nil || result == nil {
+				panic("a value was expected to be not nil")
+			}
+
 			r := &ImageProcessorOutput{
 				DownloadSize:        dl.Size,
 				DownloadContentType: dl.ContentType,
