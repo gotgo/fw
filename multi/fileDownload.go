@@ -31,7 +31,9 @@ func download(url, filename, folder string, timeout time.Duration) (*FileDownloa
 
 	resp.Body.Close()
 
-	ioutil.WriteFile(fp, bts, 0666)
+	if err := ioutil.WriteFile(fp, bts, 0666); err != nil {
+		return nil, me.Err(err, "failed to write file to "+fp)
+	}
 
 	//output.ContentType = resp.ContentType
 	//d.Track.Duration("download", started)
