@@ -20,10 +20,10 @@ var _ = Describe("PartitionOffset", func() {
 		}
 
 		sort.Sort(ByPartition{p})
-		Expect(p[0].Partition).To(Equal(1))
-		Expect(p[1].Partition).To(Equal(2))
-		Expect(p[2].Partition).To(Equal(4))
-		Expect(p[3].Partition).To(Equal(5))
+		Expect(p[0].Partition).To(Equal(int32(1)))
+		Expect(p[1].Partition).To(Equal(int32(2)))
+		Expect(p[2].Partition).To(Equal(int32(4)))
+		Expect(p[3].Partition).To(Equal(int32(5)))
 	})
 
 })
