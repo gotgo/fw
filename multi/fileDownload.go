@@ -41,7 +41,7 @@ func download(url, filename, folder string, timeout time.Duration) (*FileDownloa
 		//	d.Track.Size("saved", size)
 	}
 	file.Sync()
-
+	file.Close()
 	output.Path = fp
 	return output, nil
 }
