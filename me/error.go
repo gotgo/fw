@@ -10,8 +10,19 @@ import (
 
 const stackFrames = 2
 
-func Err(err error, msg string) error {
-	return deeperror.NewS(rand.Int63(), msg, err, stackFrames)
+type KV struct {
+	Key   string      `json:"key"`
+	Value interface{} `json:"value"`
+}
+
+func Err(err error, msg string, data ...*KV) error {
+	derr := deeperror.NewS(rand.Int63(), msg, err, stackFrames)
+	if data != nil {
+		for _, c := range data {
+			derr.AddDebugField(c.Key, c.Value)
+		}
+	}
+	return derr
 }
 
 func NewErr(msg string) error {
