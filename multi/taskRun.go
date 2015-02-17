@@ -45,9 +45,8 @@ func (t *TaskRun) Startup() {
 }
 
 type TaskRun struct {
-	Action TaskAction
-
-	Config map[string]interface{}
+	Action        TaskAction
+	DiscardOutput bool
 
 	mutex          sync.Mutex
 	Track          stats.BasicMeter
@@ -148,16 +147,18 @@ func (t *TaskRun) safeExecute(task *TaskRunInput) {
 
 	out, err := t.Action.Run(task.Input)
 
-	result := &TaskRunResult{
-		Error:  err,
-		Input:  task.Input,
-		Output: out,
-	}
+	if t.DiscardOutput == false {
+		result := &TaskRunResult{
+			Error:  err,
+			Input:  task.Input,
+			Output: out,
+		}
 
-	task.Context.Set(t.Name(), result)
+		task.Context.Set(t.Name(), result)
 
-	t.output <- &TaskRunOutput{
-		result:  result,
-		Context: task.Context,
+		t.output <- &TaskRunOutput{
+			result:  result,
+			Context: task.Context,
+		}
 	}
 }
