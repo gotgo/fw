@@ -15,6 +15,7 @@ import (
 	_ "golang.org/x/image/tiff"
 
 	"github.com/daddye/vips"
+	"github.com/disintegration/imaging"
 	"github.com/gotgo/fw/logging"
 	"github.com/gotgo/fw/me"
 )
@@ -53,10 +54,10 @@ func (a *AcquireImage) Acquire(url, filename string) (*AcquiredImage, error) {
 		return nil, me.Err(err, "failed to download url", &me.KV{"url", url})
 	}
 	sourceSize := len(bts)
-	resized, err := a.resize(bts, a.MaxHeight, a.MaxWidth)
-	if err != nil {
-		return nil, me.Err(err, "failed to resize image", &me.KV{"url", url})
-	}
+	//resized, err := a.resize(bts, a.MaxHeight, a.MaxWidth)
+	//if err != nil {
+	//	return nil, me.Err(err, "failed to resize image", &me.KV{"url", url})
+	//}
 
 	bts = nil //release memory
 
@@ -64,7 +65,10 @@ func (a *AcquireImage) Acquire(url, filename string) (*AcquiredImage, error) {
 	//	if err != nil {
 	//		me.LogError(a.Log, "failed to generate phash on resized image", err)
 	//	}
-	uploaded, err := a.upload(bytes.NewReader(resized), filename)
+
+	resized, w, h, err := a.resize(bytes.NewReader(bts), a.MaxHeight, a.MaxWidth)
+
+	uploaded, err := a.upload(resized, filename)
 	if err != nil {
 		return nil, me.Err(err, "failed up to upload resized image",
 			&me.KV{"url", url},
@@ -74,8 +78,8 @@ func (a *AcquireImage) Acquire(url, filename string) (*AcquiredImage, error) {
 		DestUrl:  uploaded.Url,
 		DestSize: uploaded.FileSize,
 		//	PHash:             phash,
-		//	DestHeight:        h,
-		//	DestWidth:         w,
+		DestHeight:        h,
+		DestWidth:         w,
 		SourceUrl:         url,
 		SourceContentType: ctype,
 		SourceSize:        sourceSize,
@@ -109,7 +113,7 @@ func (a *AcquireImage) download(url string, timeout time.Duration) ([]byte, stri
 //	return phash, w, h, err
 //}
 
-func (a *AcquireImage) resize(img []byte, maxWidth, maxHeight int) ([]byte, error) {
+func (a *AcquireImage) resizeVips(img []byte, maxWidth, maxHeight int) ([]byte, error) {
 	options := vips.Options{
 		Width:        maxWidth,
 		Height:       maxHeight,
@@ -122,6 +126,26 @@ func (a *AcquireImage) resize(img []byte, maxWidth, maxHeight int) ([]byte, erro
 	}
 
 	return vips.Resize(img, options)
+}
+
+func (a *AcquireImage) resize(imgR io.Reader, maxWidth, maxHeight int) (io.Reader, int, int, error) {
+
+	img, err := imaging.Decode(imgR)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	thumb := imaging.Fit(img, maxWidth, maxHeight, imaging.CatmullRom)
+
+	height := thumb.Rect.Dy()
+	width := thumb.Rect.Dx()
+
+	buf := new(bytes.Buffer)
+	err = imaging.Encode(buf, thumb, imaging.PNG)
+	if err != nil {
+		return nil, 0, 0, me.Err(err, "failed to encode")
+	}
+	return bytes.NewReader(buf.Bytes()), width, height, nil
 }
 
 func (a *AcquireImage) upload(source io.Reader, filename string) (*FileUploadOutput, error) {
