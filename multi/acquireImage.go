@@ -59,17 +59,17 @@ func (a *AcquireImage) Acquire(url, filename string) (*AcquiredImage, error) {
 	//	return nil, me.Err(err, "failed to resize image", &me.KV{"url", url})
 	//}
 
-	bts = nil //release memory
-
 	//	phash, w, h, err := a.phash(bytes.NewReader(resized))
 	//	if err != nil {
 	//		me.LogError(a.Log, "failed to generate phash on resized image", err)
 	//	}
 
-	resized, w, h, err := a.resize(bytes.NewReader(bts), a.MaxHeight, a.MaxWidth)
+	resized, w, h, err := a.Resize(bytes.NewReader(bts), a.MaxHeight, a.MaxWidth)
 	if err != nil {
 		return nil, me.Err(err, "failed to resize", &me.KV{"url", url})
 	}
+
+	bts = nil //release memory
 
 	uploaded, err := a.upload(resized, filename)
 	if err != nil {
@@ -131,11 +131,11 @@ func (a *AcquireImage) resizeVips(img []byte, maxWidth, maxHeight int) ([]byte, 
 	return vips.Resize(img, options)
 }
 
-func (a *AcquireImage) resize(imgR io.Reader, maxWidth, maxHeight int) (io.Reader, int, int, error) {
+func (a *AcquireImage) Resize(imgR io.Reader, maxWidth, maxHeight int) (io.Reader, int, int, error) {
 
 	img, err := imaging.Decode(imgR)
 	if err != nil {
-		return nil, 0, 0, err
+		return nil, 0, 0, me.Err(err, "failed to decode image")
 	}
 
 	thumb := imaging.Fit(img, maxWidth, maxHeight, imaging.CatmullRom)
@@ -148,6 +148,7 @@ func (a *AcquireImage) resize(imgR io.Reader, maxWidth, maxHeight int) (io.Reade
 	if err != nil {
 		return nil, 0, 0, me.Err(err, "failed to encode")
 	}
+
 	return bytes.NewReader(buf.Bytes()), width, height, nil
 }
 
