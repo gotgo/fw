@@ -67,6 +67,9 @@ func (a *AcquireImage) Acquire(url, filename string) (*AcquiredImage, error) {
 	//	}
 
 	resized, w, h, err := a.resize(bytes.NewReader(bts), a.MaxHeight, a.MaxWidth)
+	if err != nil {
+		return nil, me.Err(err, "failed to resize", &me.KV{"url", url})
+	}
 
 	uploaded, err := a.upload(resized, filename)
 	if err != nil {
