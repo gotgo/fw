@@ -54,10 +54,6 @@ func (a *AcquireImage) Acquire(url, filename string) (*AcquiredImage, error) {
 		return nil, me.Err(err, "failed to download url", &me.KV{"url", url})
 	}
 	sourceSize := len(bts)
-	//resized, err := a.resize(bts, a.MaxHeight, a.MaxWidth)
-	//if err != nil {
-	//	return nil, me.Err(err, "failed to resize image", &me.KV{"url", url})
-	//}
 
 	//	phash, w, h, err := a.phash(bytes.NewReader(resized))
 	//	if err != nil {

@@ -169,9 +169,12 @@ func (p *roundRobinPools) GetPool() *redis.Pool {
 		return nil
 	}
 	p.mu.Lock()
-	p.i = (p.i + 1) % len(p.pools)
+	i := (p.i + 1) % len(p.pools)
+	p.i = i
+	pool := p.pools[i]
 	p.mu.Unlock()
-	return p.pools[p.i]
+
+	return pool
 }
 
 // creates a pool of connection pools
