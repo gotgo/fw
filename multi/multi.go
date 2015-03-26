@@ -1,5 +1,7 @@
 package multi
 
+import "time"
+
 type StepAction interface {
 	Action(tuple DataFlow, done func())
 	Error() error
@@ -30,4 +32,10 @@ func GatherFailures(cs ...*Coordinator) []*Flow {
 type TaskAction interface {
 	Run(input interface{}) (interface{}, error)
 	Name() string
+}
+
+type AsyncOutcome struct {
+	Error    error
+	Duration time.Duration
+	Id       string
 }

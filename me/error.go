@@ -35,6 +35,15 @@ func NewErr(msg string, data ...*KV) error {
 	return derr
 }
 
+func FirstErr(values ...error) error {
+	for _, v := range values {
+		if v != nil {
+			return v
+		}
+	}
+	return nil
+}
+
 func GetErrorMessage(e interface{}) string {
 	msg := ""
 
