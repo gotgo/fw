@@ -55,3 +55,12 @@ func Base64Safe(bts []byte) string {
 	safe := strings.Replace(base64.StdEncoding.EncodeToString(bts), "/", "-", -1)
 	return strings.Replace(safe, "=", "", -1)
 }
+
+func NotEmpty(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}

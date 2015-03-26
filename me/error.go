@@ -25,8 +25,14 @@ func Err(err error, msg string, data ...*KV) error {
 	return derr
 }
 
-func NewErr(msg string) error {
-	return deeperror.NewS(rand.Int63(), msg, nil, stackFrames)
+func NewErr(msg string, data ...*KV) error {
+	derr := deeperror.NewS(rand.Int63(), msg, nil, stackFrames)
+	if data != nil {
+		for _, c := range data {
+			derr.AddDebugField(c.Key, c.Value)
+		}
+	}
+	return derr
 }
 
 func GetErrorMessage(e interface{}) string {
