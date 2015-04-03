@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/gotgo/fw/logging"
-	"github.com/gotgo/fw/me"
 	"github.com/gotgo/fw/stats"
 )
 
@@ -114,12 +113,15 @@ func (t *TaskRun) Name() string {
 	return t.Action.Name()
 }
 
+// run on multiple threads
 func (t *TaskRun) run() {
+	t.outstanding.Add(1)
 	for in := range t.input {
-		mutex.Lock()
-		mutex.Unlock()
-		t.safeExecute(in)
+		if output := t.execute(in); output != nil {
+			t.output <- output
+		}
 	}
+	t.outstanding.Done()
 	t.outstanding.Wait()
 
 	t.closeDoneOnce.Do(func() {
@@ -128,23 +130,7 @@ func (t *TaskRun) run() {
 	})
 }
 
-func (t *TaskRun) safeExecute(task *TaskRunInput) {
-	t.outstanding.Add(1)
-	defer func() {
-		t.outstanding.Done()
-		if r := recover(); r != nil {
-			r := &TaskRunResult{
-				Error: me.NewErr("recovered from panic"),
-			}
-			task.Context.Set(t.Name(), r)
-			t.output <- &TaskRunOutput{
-				result:  r,
-				Context: task.Context,
-			}
-			me.LogRecoveredPanic(t.Log, "execute failed", r, &logging.KV{"from", t})
-		}
-	}()
-
+func (t *TaskRun) execute(task *TaskRunInput) *TaskRunOutput {
 	out, err := t.Action.Run(task.Input)
 
 	if t.DiscardOutput == false {
@@ -156,9 +142,11 @@ func (t *TaskRun) safeExecute(task *TaskRunInput) {
 
 		task.Context.Set(t.Name(), result)
 
-		t.output <- &TaskRunOutput{
+		return &TaskRunOutput{
 			result:  result,
 			Context: task.Context,
 		}
 	}
+
+	return nil
 }
