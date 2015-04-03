@@ -19,6 +19,8 @@ const (
 	defaultKafkaTopicRoot = "kafka-topics"
 )
 
+var connectMutex sync.Mutex
+
 func NewKafkaKeeper(hosts []string, c *TopicConsumer, s *KafkaState) *KafkaKeeper {
 	if c.Root == "" {
 		c.Root = defaultKafkaTopicRoot
@@ -42,7 +44,6 @@ type KafkaKeeper struct {
 	hosts    []string
 	Consumer *TopicConsumer
 	State    *KafkaState
-	mtx      sync.Mutex
 }
 
 func TestConnect(hosts []string) error {
@@ -55,8 +56,8 @@ func TestConnect(hosts []string) error {
 }
 
 func (k *KafkaKeeper) connect() *zk.Conn {
-	k.mtx.Lock()
-	defer k.mtx.Unlock()
+	connectMutex.Lock()
+	defer connectMutex.Unlock()
 	conn, _, err := zk.Connect(k.hosts, connectTimeout)
 	if err != nil {
 		panic(me.Err(err, "failed to connect to zookeeper nodes"))
