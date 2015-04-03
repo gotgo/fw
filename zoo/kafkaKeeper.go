@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gotgo/fw/me"
@@ -41,6 +42,7 @@ type KafkaKeeper struct {
 	hosts    []string
 	Consumer *TopicConsumer
 	State    *KafkaState
+	mtx      sync.Mutex
 }
 
 func TestConnect(hosts []string) error {
@@ -53,6 +55,8 @@ func TestConnect(hosts []string) error {
 }
 
 func (k *KafkaKeeper) connect() *zk.Conn {
+	k.mtx.Lock()
+	defer k.mtx.Unlock()
 	conn, _, err := zk.Connect(k.hosts, connectTimeout)
 	if err != nil {
 		panic(me.Err(err, "failed to connect to zookeeper nodes"))

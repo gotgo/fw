@@ -44,6 +44,7 @@ func FirstErr(values ...error) error {
 	return nil
 }
 
+//rename - ErrorMessage
 func GetErrorMessage(e interface{}) string {
 	msg := ""
 
