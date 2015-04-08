@@ -106,11 +106,15 @@ func ArrayOfBytes(results interface{}, err error) ([][]byte, error) {
 	if values, err := redis.Values(results, err); err != nil {
 		return nil, err
 	} else {
-		result := make([][]byte, len(values))
-		for i := 0; i < len(values); i++ {
-			result[i] = values[i].([]byte)
+		if values == nil {
+			return [][]byte{}, nil
+		} else {
+			result := make([][]byte, len(values))
+			for i := 0; i < len(values); i++ {
+				result[i] = values[i].([]byte)
+			}
+			return result, nil
 		}
-		return result, nil
 	}
 }
 
