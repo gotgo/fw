@@ -20,15 +20,11 @@ type RedisCache struct {
 
 // NewRedisCache creates a new cache service connecting to the given
 // hostUris and hostPassword. If there is no hostPassword, then pass an empty string.
-func NewService(readUris []string, writeUris []string, hostPassword string) (*RedisCache, error) {
+func NewService(readUris []string, writeUris []string, hostPassword string) *RedisCache {
 	r := new(RedisCache)
 	r.readPool = r.newPool(readUris, hostPassword)
 	r.writePool = r.newPool(writeUris, hostPassword)
-	if err := r.Ping(); err != nil {
-		return nil, err
-	} else {
-		return r, nil
-	}
+	return r
 }
 
 func (r *RedisCache) Ping() error {
