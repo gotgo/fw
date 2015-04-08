@@ -46,6 +46,8 @@ type Client interface {
 	StringsCache
 	SortedSet
 	Set
+	Write(command string, args ...interface{}) (interface{}, error)
+	Read(command string, args ...interface{}) (interface{}, error)
 }
 
 type ScoredMember struct {
@@ -53,10 +55,18 @@ type ScoredMember struct {
 	Member string
 }
 
-func stringsToInterfaces(keys []string) []interface{} {
+func StringsToInterfaces(keys []string) []interface{} {
 	result := make([]interface{}, len(keys))
 	for i, k := range keys {
 		result[i] = k
+	}
+	return result
+}
+
+func PrefixStringsToInterfaces(prefix string, keys []string) []interface{} {
+	result := make([]interface{}, len(keys))
+	for i, k := range keys {
+		result[i] = prefix + k
 	}
 	return result
 }
@@ -92,7 +102,7 @@ func flatten(kvs []*KeyValueString) []interface{} {
 	return r
 }
 
-func arrayOfBytes(results interface{}, err error) ([][]byte, error) {
+func ArrayOfBytes(results interface{}, err error) ([][]byte, error) {
 	if values, err := redis.Values(results, err); err != nil {
 		return nil, err
 	} else {
@@ -104,13 +114,25 @@ func arrayOfBytes(results interface{}, err error) ([][]byte, error) {
 	}
 }
 
-func arrayOfStrings(results interface{}, err error) ([]string, error) {
+func ArrayOfStrings(results interface{}, err error) ([]string, error) {
 	if values, err := redis.Values(results, err); err != nil {
 		return nil, deeperror.New(rand.Int63(), "redis values fail", err)
 	} else {
 		result := make([]string, len(values))
 		for i, value := range values {
 			result[i], _ = redis.String(value, nil)
+		}
+		return result, nil
+	}
+}
+
+func ArrayOfInts(results interface{}, err error) ([]int, error) {
+	if values, err := redis.Values(results, err); err != nil {
+		return nil, deeperror.New(rand.Int63(), "redis values fail", err)
+	} else {
+		result := make([]int, len(values))
+		for i, value := range values {
+			result[i], _ = redis.Int(value, nil)
 		}
 		return result, nil
 	}

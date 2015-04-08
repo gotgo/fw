@@ -2,6 +2,7 @@ package redisc
 
 import (
 	"math/rand"
+	"time"
 
 	"github.com/amattn/deeperror"
 	"github.com/garyburd/redigo/redis"
@@ -15,13 +16,14 @@ func (r *RedisCache) MGet(keys []string) (result []string, err error) {
 	}
 	defer conn.Close()
 
-	useKeys := stringsToInterfaces(keys)
-	if values, err := arrayOfStrings(conn.Do("MGET", useKeys...)); err != nil {
+	useKeys := StringsToInterfaces(keys)
+	if values, err := ArrayOfStrings(conn.Do("MGET", useKeys...)); err != nil {
 		return nil, deeperror.New(rand.Int63(), "MGET fail", err)
 	} else {
 		return values, nil
 	}
 }
+
 func (r *RedisCache) MSet(kv []*KeyValueString) error {
 	conn, err := r.write()
 	if err != nil {
@@ -52,6 +54,54 @@ func (r *RedisCache) SetNX(key string, value string) error {
 func (r *RedisCache) Set(key string, value string) error {
 	return r.setWithOverwrite(key, value, true)
 }
+
+type SetP struct {
+	Key   string
+	Value string
+	TTL   time.Duration
+	NX    bool
+	XX    bool
+}
+
+func (s *SetP) Command() (string, []interface{}) {
+	v := []interface{}{s.Key, s.Value}
+	if s.TTL > 0 {
+		v = append(v, "EX")
+		v = append(v, s.TTL*time.Second)
+	}
+	return "SET", v
+}
+
+/////////////////////////
+// NEW INTERFACE??
+
+func (r *RedisCache) Write(command string, args ...interface{}) (interface{}, error) {
+	if conn, err := r.write(); err != nil {
+		return nil, err
+	} else {
+		defer conn.Close()
+		return conn.Do(command, args)
+	}
+}
+
+func (r *RedisCache) Read(command string, args ...interface{}) (interface{}, error) {
+	if conn, err := r.read(); err != nil {
+		return nil, err
+	} else {
+		defer conn.Close()
+		return conn.Do(command, args)
+	}
+}
+func (r *RedisCache) ReadInt64(command string, args ...interface{}) (int64, error) {
+	if conn, err := r.read(); err != nil {
+		return -1, err
+	} else {
+		defer conn.Close()
+		return redis.Int64(conn.Do(command, args))
+	}
+}
+
+//////////////////////////////////
 
 // Set a value in cache by the given key.
 func (r *RedisCache) setWithOverwrite(key string, value string, overwrite bool) error {

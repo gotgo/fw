@@ -47,7 +47,7 @@ func (rc *RedisCache) SRandMember(key string, count int) ([]string, error) {
 		return nil, err
 	} else {
 		defer conn.Close()
-		return arrayOfStrings(conn.Do("SRANDMEMBER", key))
+		return ArrayOfStrings(conn.Do("SRANDMEMBER", key))
 	}
 }
 
@@ -56,7 +56,7 @@ func (s *RedisCache) SMembers(listKey string) ([]string, error) {
 		return []string{}, err
 	} else {
 		defer conn.Close()
-		return arrayOfStrings(conn.Do("SMEMBERS", listKey))
+		return ArrayOfStrings(conn.Do("SMEMBERS", listKey))
 	}
 }
 
