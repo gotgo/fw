@@ -111,7 +111,9 @@ func ArrayOfBytes(results interface{}, err error) ([][]byte, error) {
 		} else {
 			result := make([][]byte, len(values))
 			for i := 0; i < len(values); i++ {
-				result[i] = values[i].([]byte)
+				if values[i] != nil {
+					result[i] = values[i].([]byte)
+				}
 			}
 			return result, nil
 		}
