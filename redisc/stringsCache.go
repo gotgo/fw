@@ -80,7 +80,7 @@ func (r *RedisCache) Write(command string, args ...interface{}) (interface{}, er
 		return nil, err
 	} else {
 		defer conn.Close()
-		return conn.Do(command, args)
+		return conn.Do(command, args...)
 	}
 }
 
@@ -89,7 +89,7 @@ func (r *RedisCache) Read(command string, args ...interface{}) (interface{}, err
 		return nil, err
 	} else {
 		defer conn.Close()
-		return conn.Do(command, args)
+		return conn.Do(command, args...)
 	}
 }
 func (r *RedisCache) ReadInt64(command string, args ...interface{}) (int64, error) {
@@ -97,7 +97,7 @@ func (r *RedisCache) ReadInt64(command string, args ...interface{}) (int64, erro
 		return -1, err
 	} else {
 		defer conn.Close()
-		return redis.Int64(conn.Do(command, args))
+		return redis.Int64(conn.Do(command, args...))
 	}
 }
 
