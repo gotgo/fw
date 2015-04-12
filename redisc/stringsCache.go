@@ -76,6 +76,7 @@ func (s *SetP) Command() (string, []interface{}) {
 // NEW INTERFACE??
 
 func (r *RedisCache) Write(command string, args ...interface{}) (interface{}, error) {
+	//if len(args) == 1 && args[0]
 	if conn, err := r.write(); err != nil {
 		return nil, err
 	} else {
