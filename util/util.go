@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"reflect"
 	"strings"
+	"unicode"
 
 	"code.google.com/p/go-uuid/uuid"
 )
@@ -53,6 +54,7 @@ func NoQuotes(target string) string {
 // Base64Safe - Makes safe for file paths, removes the forward slash '/' and equals '='
 func Base64Safe(bts []byte) string {
 	safe := strings.Replace(base64.StdEncoding.EncodeToString(bts), "/", "-", -1)
+	safe = strings.Replace(safe, "+", "_", -1)
 	return strings.Replace(safe, "=", "", -1)
 }
 
@@ -72,5 +74,21 @@ func NotNil(values ...interface{}) interface{} {
 		}
 	}
 	return nil
+
+}
+
+func IsPathSafe(v string) (bool, int) {
+	if v == "" {
+		return true, -1
+	}
+
+	for i, r := range v {
+		safe := unicode.IsNumber(r) || unicode.IsLetter(r) || r == '-' || r == '_' || r == '.' || r == '~'
+		if !safe {
+			return false, i
+		}
+	}
+
+	return true, -1
 
 }
