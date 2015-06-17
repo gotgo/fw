@@ -55,6 +55,7 @@ func NoQuotes(target string) string {
 func Base64Safe(bts []byte) string {
 	safe := strings.Replace(base64.StdEncoding.EncodeToString(bts), "/", "-", -1)
 	safe = strings.Replace(safe, "+", "_", -1)
+	safe = strings.Replace(safe, " ", "", -1)
 	return strings.Replace(safe, "=", "", -1)
 }
 
